@@ -1,0 +1,18 @@
+==============================================
+HATA: Infinite Recursion in Profiles
+==============================================
+
+ÇÖZÜM: Supabase SQL Editor'de şunu çalıştır:
+
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE survey_responses DISABLE ROW LEVEL SECURITY;
+ALTER TABLE survey_answers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE dimension_scores DISABLE ROW LEVEL SECURITY;
+
+==============================================
+Sonra browser'ı yenile ve survey'i tekrar dene!
+==============================================
+
+NOT: Bu geçici bir çözüm (development için).
+Kalıcı çözüm: scripts/FIX_RLS_POLICIES.sql
+==============================================
