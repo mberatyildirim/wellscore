@@ -65,10 +65,11 @@ export default function LoginPage() {
       // Step 3: Redirect based on role
       toast.success(`Hoş geldiniz, ${profile.full_name}! 👋`);
       
+      // Use window.location for hard redirect (works better in production)
       if (profile.role === "hr_admin") {
-        router.push("/hr/dashboard");
+        window.location.href = "/hr/dashboard";
       } else {
-        router.push("/employee/dashboard");
+        window.location.href = "/employee/dashboard";
       }
       
     } catch (error: any) {

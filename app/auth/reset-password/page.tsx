@@ -64,9 +64,9 @@ export default function ResetPasswordPage() {
 
       toast.success('Şifreniz başarıyla oluşturuldu! 🎉');
       
-      // Redirect to login
+      // Redirect to login (hard redirect for production)
       setTimeout(() => {
-        router.push('/auth/login');
+        window.location.href = '/auth/login';
       }, 1500);
 
     } catch (error: any) {

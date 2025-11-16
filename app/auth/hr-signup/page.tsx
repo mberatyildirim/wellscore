@@ -99,8 +99,8 @@ export default function HRSignupPage() {
       toast.success("Şirket kaydı başarılı! 🎉");
       toast.info("Email adresinizi doğrulayın");
       
-      // Redirect to success page
-      router.push("/auth/sign-up-success");
+      // Redirect to success page (hard redirect for production)
+      window.location.href = "/auth/sign-up-success";
       
     } catch (error: any) {
       console.error("[HR Signup Error]:", error);
