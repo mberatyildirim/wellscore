@@ -21,7 +21,7 @@ export default function ResetPasswordPage() {
   const [isValidToken, setIsValidToken] = useState(false);
 
   useEffect(() => {
-    // Check if there's a valid session/token
+    // Check if there's a valid session
     const checkSession = async () => {
       const supabase = createClient();
       const { data: { session } } = await supabase.auth.getSession();
@@ -29,7 +29,15 @@ export default function ResetPasswordPage() {
       if (session) {
         setIsValidToken(true);
       } else {
-        toast.error('Geçersiz veya süresi dolmuş davet linki');
+        // Wait a bit for the callback route to process
+        setTimeout(async () => {
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          if (retrySession) {
+            setIsValidToken(true);
+          } else {
+            toast.error('Geçersiz veya süresi dolmuş davet linki');
+          }
+        }, 1000);
       }
     };
 
@@ -62,12 +70,33 @@ export default function ResetPasswordPage() {
 
       if (error) throw error;
 
-      toast.success('Şifreniz başarıyla oluşturuldu! 🎉');
+      // Get user profile to redirect to correct dashboard
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Redirect to login (hard redirect for production)
-      setTimeout(() => {
-        window.location.href = '/auth/login';
-      }, 1500);
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role, full_name')
+          .eq('id', user.id)
+          .single();
+
+        toast.success('Şifreniz başarıyla oluşturuldu! 🎉');
+        
+        // Redirect based on role (hard redirect for production)
+        setTimeout(() => {
+          if (profile?.role === 'hr_admin') {
+            window.location.href = '/hr/dashboard';
+          } else {
+            window.location.href = '/employee/dashboard';
+          }
+        }, 1000);
+      } else {
+        // Fallback to login
+        toast.success('Şifreniz başarıyla oluşturuldu! Giriş yapabilirsiniz.');
+        setTimeout(() => {
+          window.location.href = '/auth/login';
+        }, 1500);
+      }
 
     } catch (error: any) {
       console.error('[Password Reset Error]:', error);
