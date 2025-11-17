@@ -166,7 +166,7 @@ export default async function EventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
+    <div className="min-h-screen bg-white p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
         <div className="flex items-start justify-between">

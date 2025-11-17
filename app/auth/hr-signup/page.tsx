@@ -114,26 +114,27 @@ export default function HRSignupPage() {
   return (
     <>
       <LoadingScreen />
-      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 sm:p-6">
         <div className="w-full max-w-2xl">
           {/* Back button */}
           <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4 sm:mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          Ana Sayfaya Dön
+          <span className="hidden sm:inline">Ana Sayfaya Dön</span>
+          <span className="sm:hidden">Geri</span>
         </Link>
 
         <Card className="border-border bg-white shadow-xl">
-          <CardHeader className="text-center pb-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
-              <Building2 className="h-8 w-8 text-orange-600" />
+          <CardHeader className="text-center pb-6 sm:pb-8 px-4 sm:px-6">
+            <div className="mx-auto mb-3 sm:mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-orange-100">
+              <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
             </div>
-            <CardTitle className="text-3xl text-gray-900">
+            <CardTitle className="text-xl sm:text-2xl lg:text-3xl text-gray-900">
               Şirket Kaydı
             </CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardDescription className="text-sm sm:text-base text-gray-600 mt-2">
               Wellscore'a hoş geldiniz! Şirketinizi kaydedin ve çalışanlarınızın wellbeing'ini ölçmeye başlayın.
             </CardDescription>
           </CardHeader>
@@ -165,9 +166,9 @@ export default function HRSignupPage() {
                     <Label htmlFor="industry" className="text-gray-700">Sektör</Label>
                     <Select value={industry} onValueChange={setIndustry} disabled={isLoading}>
                       <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                        <SelectValue placeholder="Sektör seçin" />
+                        <SelectValue placeholder="Sektör seçin" className="text-gray-900 placeholder:text-gray-900" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-white text-gray-900">
                         <SelectItem value="Teknoloji">Teknoloji</SelectItem>
                         <SelectItem value="Finans">Finans</SelectItem>
                         <SelectItem value="Sağlık">Sağlık</SelectItem>
@@ -183,9 +184,9 @@ export default function HRSignupPage() {
                     <Label htmlFor="employeeCount" className="text-gray-700">Çalışan Sayısı</Label>
                     <Select value={employeeCount} onValueChange={setEmployeeCount} disabled={isLoading}>
                       <SelectTrigger className="bg-white text-gray-900 border-gray-300">
-                        <SelectValue placeholder="Seçin" />
+                        <SelectValue placeholder="Seçin" className="text-gray-900 placeholder:text-gray-900" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white">
+                      <SelectContent className="bg-white text-gray-900">
                         <SelectItem value="1-10">1-10</SelectItem>
                         <SelectItem value="11-50">11-50</SelectItem>
                         <SelectItem value="51-200">51-200</SelectItem>

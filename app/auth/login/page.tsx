@@ -85,7 +85,7 @@ export default function LoginPage() {
   return (
     <>
       <LoadingScreen />
-      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 sm:p-6">
       <div className="w-full max-w-md">
         <Link
           href="/"

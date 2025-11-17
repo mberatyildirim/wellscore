@@ -3,11 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Building2, User } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Building2, User, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,14 +34,15 @@ export function Navbar() {
             alt="WellScore Logo" 
             width={40} 
             height={40}
-            className="w-10 h-10"
+            className="w-8 h-8 sm:w-10 sm:h-10"
           />
-          <span className={`text-xl font-bold ${scrolled ? 'text-white' : 'text-gray-900'}`}>
+          <span className={`text-lg sm:text-xl font-bold ${scrolled ? 'text-white' : 'text-gray-900'}`}>
             WellScore
           </span>
         </Link>
 
-        <nav className="flex items-center gap-3">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center gap-3">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -63,6 +66,39 @@ export function Navbar() {
             </Link>
           </Button>
         </nav>
+
+        {/* Mobile Navigation */}
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+          <SheetTrigger asChild className="md:hidden">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className={`${scrolled ? 'text-white hover:bg-white/10' : 'text-gray-900 hover:bg-gray-100'}`}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[280px] sm:w-[320px]">
+            <nav className="flex flex-col gap-4 mt-8">
+              <Link 
+                href="/hr/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <Building2 className="w-5 h-5 text-orange-600" />
+                <span className="text-base font-medium text-gray-900">İK Paneli</span>
+              </Link>
+              <Link 
+                href="/employee/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 p-3 rounded-lg bg-orange-600 hover:bg-orange-700 transition-colors"
+              >
+                <User className="w-5 h-5 text-white" />
+                <span className="text-base font-medium text-white">Çalışan Girişi</span>
+              </Link>
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );

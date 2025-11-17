@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
     return (
       <>
         <LoadingScreen />
-        <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+        <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 sm:p-6">
           <Card className="w-full max-w-md border-red-200 bg-red-50">
             <CardHeader className="text-center">
               <CardTitle className="text-2xl text-red-600">Geçersiz Link</CardTitle>
@@ -133,7 +133,7 @@ export default function ResetPasswordPage() {
   return (
     <>
       <LoadingScreen />
-      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+      <div className="flex min-h-screen w-full items-center justify-center bg-white p-4 sm:p-6">
         <div className="w-full max-w-md">
         <Card className="border-border bg-white shadow-xl">
           <CardHeader className="text-center pb-6">

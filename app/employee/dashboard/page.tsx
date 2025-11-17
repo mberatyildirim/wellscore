@@ -59,7 +59,7 @@ export default async function EmployeeDashboardPage() {
   // If no survey, show welcome screen
   if (!latestResponse) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
+      <div className="min-h-screen bg-white p-4 sm:p-6">
         <div className="mx-auto max-w-4xl">
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-foreground">
@@ -141,7 +141,7 @@ export default async function EmployeeDashboardPage() {
   const overallCategory = getScoreCategory(overallScore);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
+    <div className="min-h-screen bg-white p-4 sm:p-6">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
