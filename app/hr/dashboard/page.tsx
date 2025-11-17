@@ -87,9 +87,9 @@ export default async function HRDashboardPage() {
         id: dimId,
         name_tr: item.wellbeing_dimensions.name_tr,
         color: item.wellbeing_dimensions.color,
-        scores: [],
-      };
-    }
+          scores: [],
+        };
+      }
     acc[dimId].scores.push(item.score);
     return acc;
   }, {});
@@ -111,26 +111,26 @@ export default async function HRDashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
       <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-foreground flex items-center gap-3">
-              <Building2 className="h-10 w-10 text-primary" />
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground flex items-center gap-2 sm:gap-3">
+              <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
               {company?.name}
-            </h1>
-            <p className="mt-2 text-muted-foreground">
+          </h1>
+            <p className="mt-2 text-sm sm:text-base text-muted-foreground">
               {company?.industry} • {company?.employee_count} Çalışan
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button asChild variant="outline">
+          <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
+            <Button asChild variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
               <Link href="/hr/employees">
-                <Users className="mr-2 h-4 w-4" />
+                <Users className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Çalışanlar
               </Link>
             </Button>
-            <Button asChild>
+            <Button asChild size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
               <Link href="/hr/invite">
-                <UserPlus className="mr-2 h-4 w-4" />
+                <UserPlus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Çalışan Ekle
               </Link>
             </Button>
@@ -138,7 +138,7 @@ export default async function HRDashboardPage() {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Total Employees */}
           <Card className="border-border">
             <CardHeader className="pb-3">
@@ -215,8 +215,8 @@ export default async function HRDashboardPage() {
                 </CardTitle>
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
               </div>
-            </CardHeader>
-            <CardContent>
+                </CardHeader>
+                <CardContent>
               <div className="text-3xl font-bold text-orange-600">{atRiskCount}</div>
               <p className="mt-2 text-xs text-muted-foreground">
                 {atRiskCount > 0 
@@ -227,63 +227,156 @@ export default async function HRDashboardPage() {
           </Card>
         </div>
 
-        {/* Dimension Analysis */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-primary" />
+        {/* Dimension Analysis - Individual Cards */}
+        <div>
+          <div className="mb-6">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-primary" />
               Wellbeing Boyutları Analizi
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="mt-2 text-muted-foreground">
               Şirket genelinde en güçlü ve geliştirilmesi gereken alanlar
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {dimensionStats.length > 0 ? (
-              dimensionStats.map((dim: any, index: number) => {
-                const percentage = (dim.average / 5) * 100;
-                const isLowest = index === 0;
-                const isHighest = index === dimensionStats.length - 1;
+            </p>
+          </div>
+
+          {dimensionStats.length > 0 ? (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {dimensionStats.map((dim: any) => {
+                const score = dim.average;
+                const percentage = (score / 5) * 100;
+                
+                // Dynamic styling based on score (red to green gradient)
+                let gradientFrom = "from-emerald-500";
+                let gradientTo = "to-green-500";
+                let bgGradient = "bg-gradient-to-br from-emerald-50 to-green-50";
+                let borderColor = "border-green-400/50";
+                let textColor = "text-green-700";
+                let glowColor = "shadow-green-500/20";
+                let progressColor = "bg-gradient-to-r from-green-400 to-emerald-500";
+                let statusLabel = "Mükemmel";
+                let ringColor = "ring-green-500/20";
+                
+                if (score < 2.5) {
+                  gradientFrom = "from-red-500";
+                  gradientTo = "to-rose-500";
+                  bgGradient = "bg-gradient-to-br from-red-50 to-rose-50";
+                  borderColor = "border-red-400/50";
+                  textColor = "text-red-700";
+                  glowColor = "shadow-red-500/20";
+                  progressColor = "bg-gradient-to-r from-red-400 to-rose-500";
+                  statusLabel = "Kritik";
+                  ringColor = "ring-red-500/20";
+                } else if (score < 3.5) {
+                  gradientFrom = "from-orange-500";
+                  gradientTo = "to-amber-500";
+                  bgGradient = "bg-gradient-to-br from-orange-50 to-amber-50";
+                  borderColor = "border-orange-400/50";
+                  textColor = "text-orange-700";
+                  glowColor = "shadow-orange-500/20";
+                  progressColor = "bg-gradient-to-r from-orange-400 to-amber-500";
+                  statusLabel = "Gelişmeli";
+                  ringColor = "ring-orange-500/20";
+                } else if (score < 4.5) {
+                  gradientFrom = "from-yellow-500";
+                  gradientTo = "to-amber-400";
+                  bgGradient = "bg-gradient-to-br from-yellow-50 to-amber-50";
+                  borderColor = "border-yellow-400/50";
+                  textColor = "text-yellow-700";
+                  glowColor = "shadow-yellow-500/20";
+                  progressColor = "bg-gradient-to-r from-yellow-400 to-amber-400";
+                  statusLabel = "İyi";
+                  ringColor = "ring-yellow-500/20";
+                }
                 
                 return (
-                  <div key={dim.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="h-3 w-3 rounded-full" 
-                          style={{ backgroundColor: dim.color }}
-                        />
-                        <span className="font-medium">{dim.name_tr}</span>
-                        {isLowest && (
-                          <Badge variant="outline" className="text-xs text-orange-600">
-                            Gelişim Alanı
-                          </Badge>
-                        )}
-                        {isHighest && (
-                          <Badge variant="outline" className="text-xs text-green-600">
-                            En Güçlü
-                          </Badge>
-                        )}
+                  <Card 
+                    key={dim.id} 
+                    className={`group relative overflow-hidden border-2 ${borderColor} ${bgGradient} flex flex-col transition-all duration-300 hover:shadow-xl ${glowColor} hover:-translate-y-1 hover:ring-4 ${ringColor}`}
+                  >
+                    {/* Animated background gradient */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${gradientFrom} ${gradientTo} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
+                    
+                    {/* Shine effect on hover */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-10 transform -skew-x-12 group-hover:translate-x-full transition-all duration-1000" />
+                    
+                    <CardHeader className="pb-3 relative z-10">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${textColor.replace('text-', 'bg-')} animate-pulse`} />
+                            <CardTitle className="text-sm sm:text-base font-bold text-foreground">
+                              {dim.name_tr}
+                            </CardTitle>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-lg font-bold">
-                        {dim.average.toFixed(1)}
-                      </span>
-                    </div>
-                    <Progress value={percentage} className="h-2" />
-                  </div>
+                    </CardHeader>
+                    
+                    <CardContent className="flex flex-col flex-1 justify-between space-y-4 relative z-10">
+                      <div className="space-y-4">
+                        {/* Score Display */}
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-4xl sm:text-5xl font-black ${textColor} tracking-tight`}>
+                            {score.toFixed(1)}
+                          </span>
+                          <span className="text-xs sm:text-sm text-muted-foreground font-medium">/ 5.0</span>
+                        </div>
+                        
+                        {/* Animated Progress Bar */}
+                        <div className="space-y-2">
+                          <div className="relative h-3 bg-gray-200/50 rounded-full overflow-hidden backdrop-blur-sm">
+                            <div 
+                              className={`h-full ${progressColor} rounded-full transition-all duration-1000 ease-out relative overflow-hidden`}
+                              style={{ width: `${percentage}%` }}
+                            >
+                              {/* Shine animation on progress bar */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent animate-shimmer" />
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <Badge 
+                              variant="secondary" 
+                              className={`${textColor} font-semibold text-xs px-2 py-0.5 bg-white/80 backdrop-blur-sm`}
+                            >
+                              {statusLabel}
+                            </Badge>
+                            <span className="text-xs font-medium text-muted-foreground">
+                              {percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Improve Button - Always at bottom with gradient */}
+                      <Button 
+                        asChild 
+                        className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 text-white font-semibold shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40 transition-all duration-300 mt-auto group/btn"
+                        size="sm"
+                      >
+                        <Link href={`/hr/actions?dimension=${dim.id}`}>
+                          <span className="relative z-10">İyileştir</span>
+                          <ArrowRight className="ml-2 h-4 w-4 group-hover/btn:translate-x-1 transition-transform duration-300" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
                 );
-              })
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p>Henüz veri yok. Çalışanları ankete davet edin!</p>
-              </div>
+              })}
+            </div>
+          ) : (
+            <Card className="border-border">
+              <CardContent className="py-12">
+                <div className="text-center text-muted-foreground">
+                  <Activity className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                  <p>Henüz veri yok. Çalışanları ankete davet edin!</p>
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3">
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -325,25 +418,25 @@ export default async function HRDashboardPage() {
           </Card>
 
           <Card className="border-border">
-            <CardHeader>
+                  <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Download className="h-5 w-5 text-primary" />
                 Raporlar
-              </CardTitle>
+                    </CardTitle>
               <CardDescription>
                 Detaylı analizleri indirin
               </CardDescription>
-            </CardHeader>
-            <CardContent>
+                  </CardHeader>
+                  <CardContent>
               <Button asChild variant="outline" className="w-full">
                 <Link href="/hr/reports">
                   Raporlara Git
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
-        </div>
+                  </CardContent>
+                </Card>
+            </div>
       </div>
     </div>
   );

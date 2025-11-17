@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from "@/lib/supabase/server";
 import { SurveyForm } from "@/components/survey/survey-form";
 
@@ -63,11 +64,20 @@ export default async function SurveyPage() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="mx-auto max-w-3xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
-          <p className="mt-2 text-muted-foreground">
-            8 boyutta wellbeing durumunuzu değerlendirin (40 soru)
-          </p>
+        <div className="mb-8 text-center flex flex-col items-center gap-4">
+          <Image 
+            src="/logo.svg" 
+            alt="WellScore Logo" 
+            width={64} 
+            height={64}
+            className="w-16 h-16"
+          />
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
+            <p className="mt-2 text-muted-foreground">
+              8 boyutta wellbeing durumunuzu değerlendirin (40 soru)
+            </p>
+          </div>
         </div>
         
         <SurveyForm 

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import Link from "next/link";
 import { ArrowLeft, Building2, Mail, Lock, User, Briefcase, Users } from "lucide-react";
 import { toast } from "sonner";
@@ -111,26 +112,28 @@ export default function HRSignupPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
-      <div className="w-full max-w-2xl">
-        {/* Back button */}
-        <Link
+    <>
+      <LoadingScreen />
+      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+        <div className="w-full max-w-2xl">
+          {/* Back button */}
+          <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Ana Sayfaya Dön
         </Link>
 
-        <Card className="border-border bg-card shadow-xl">
+        <Card className="border-border bg-white shadow-xl">
           <CardHeader className="text-center pb-8">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Building2 className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
+              <Building2 className="h-8 w-8 text-orange-600" />
             </div>
-            <CardTitle className="text-3xl text-card-foreground">
+            <CardTitle className="text-3xl text-gray-900">
               Şirket Kaydı
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-gray-600">
               Wellscore'a hoş geldiniz! Şirketinizi kaydedin ve çalışanlarınızın wellbeing'ini ölçmeye başlayın.
             </CardDescription>
           </CardHeader>
@@ -139,13 +142,13 @@ export default function HRSignupPage() {
             <form onSubmit={handleSignup} className="space-y-6">
               {/* Company Information */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-orange-600" />
                   Şirket Bilgileri
                 </h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="companyName">Şirket Adı *</Label>
+                  <Label htmlFor="companyName" className="text-gray-700">Şirket Adı *</Label>
                   <Input
                     id="companyName"
                     placeholder="Örnek: Acme Corp"
@@ -153,17 +156,18 @@ export default function HRSignupPage() {
                     onChange={(e) => setCompanyName(e.target.value)}
                     required
                     disabled={isLoading}
+                    className="text-gray-900"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="industry">Sektör</Label>
+                    <Label htmlFor="industry" className="text-gray-700">Sektör</Label>
                     <Select value={industry} onValueChange={setIndustry} disabled={isLoading}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white text-gray-900 border-gray-300">
                         <SelectValue placeholder="Sektör seçin" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="Teknoloji">Teknoloji</SelectItem>
                         <SelectItem value="Finans">Finans</SelectItem>
                         <SelectItem value="Sağlık">Sağlık</SelectItem>
@@ -176,12 +180,12 @@ export default function HRSignupPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="employeeCount">Çalışan Sayısı</Label>
+                    <Label htmlFor="employeeCount" className="text-gray-700">Çalışan Sayısı</Label>
                     <Select value={employeeCount} onValueChange={setEmployeeCount} disabled={isLoading}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white text-gray-900 border-gray-300">
                         <SelectValue placeholder="Seçin" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="1-10">1-10</SelectItem>
                         <SelectItem value="11-50">11-50</SelectItem>
                         <SelectItem value="51-200">51-200</SelectItem>
@@ -195,18 +199,18 @@ export default function HRSignupPage() {
 
               {/* HR Admin Information */}
               <div className="space-y-4 pt-4 border-t border-border">
-                <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                  <User className="h-5 w-5" />
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <User className="h-5 w-5 text-orange-600" />
                   Yönetici Bilgileri
                 </h3>
 
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Ad Soyad *</Label>
+                  <Label htmlFor="fullName" className="text-gray-700">Ad Soyad *</Label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="fullName"
-                      className="pl-9"
+                      className="pl-9 text-gray-900"
                       placeholder="Adınız Soyadınız"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
@@ -217,13 +221,13 @@ export default function HRSignupPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email" className="text-gray-700">Email *</Label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       id="email"
                       type="email"
-                      className="pl-9"
+                      className="pl-9 text-gray-900"
                       placeholder="hr@sirket.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
@@ -235,13 +239,13 @@ export default function HRSignupPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="password">Şifre *</Label>
+                    <Label htmlFor="password" className="text-gray-700">Şifre *</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="password"
                         type="password"
-                        className="pl-9"
+                        className="pl-9 text-gray-900"
                         placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -253,13 +257,13 @@ export default function HRSignupPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Şifre Tekrar *</Label>
+                    <Label htmlFor="confirmPassword" className="text-gray-700">Şifre Tekrar *</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
                         id="confirmPassword"
                         type="password"
-                        className="pl-9"
+                        className="pl-9 text-gray-900"
                         placeholder="••••••••"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
@@ -275,18 +279,18 @@ export default function HRSignupPage() {
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12"
+                className="w-full bg-orange-600 text-white hover:bg-orange-700 h-12"
                 disabled={isLoading}
               >
                 {isLoading ? "Kaydediliyor..." : "Şirketi Kaydet ve Başla"}
               </Button>
 
               {/* Login Link */}
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-sm text-gray-600">
                 Zaten hesabınız var mı?{" "}
                 <Link
                   href="/auth/login"
-                  className="text-primary underline underline-offset-4 hover:text-primary/80"
+                  className="text-orange-600 underline underline-offset-4 hover:text-orange-700"
                 >
                   Giriş Yapın
                 </Link>
@@ -294,8 +298,9 @@ export default function HRSignupPage() {
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

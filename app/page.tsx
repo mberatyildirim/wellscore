@@ -12,7 +12,7 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col">
       <Navbar />
       <Hero />
-      <CompanyLogos />
+      {/* <CompanyLogos /> */}
       <FeaturesSection />
       <HowItWorks />
       <Testimonials />

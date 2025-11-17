@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { MoveRight, PhoneCall } from 'lucide-react';
+import { PhoneCall } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -25,24 +25,19 @@ function Hero() {
   }, [titleNumber, titles]);
 
   return (
-    <div className="w-full bg-gradient-to-b from-teal-50/50 to-background">
+    <div className="w-full bg-gradient-to-b from-orange-50/50 to-background">
       <div className="container mx-auto">
         <div className="flex gap-8 py-20 lg:py-40 items-center justify-center flex-col">
-          <div>
-            <Button variant="secondary" size="sm" className="gap-4">
-              Son araştırmamızı okuyun <MoveRight className="w-4 h-4" />
-            </Button>
-          </div>
           <div className="flex gap-4 flex-col">
             <h1 className="text-5xl md:text-7xl max-w-4xl tracking-tighter text-center font-regular">
-              <span className="text-teal-600 font-semibold">WellScore</span>
+              <span className="text-orange-600 font-bold">WellScore</span>
               <span className="text-gray-900 dark:text-gray-100"> ile daha</span>
               <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
                 &nbsp;
                 {titles.map((title, index) => (
                   <motion.span
                     key={index}
-                    className="absolute font-semibold text-teal-600"
+                    className="absolute font-semibold text-orange-600"
                     initial={{ opacity: 0, y: "-100" }}
                     transition={{ type: "spring", stiffness: 50 }}
                     animate={
@@ -70,14 +65,9 @@ function Hero() {
             </p>
           </div>
           <div className="flex flex-row gap-3">
-            <Button size="lg" className="gap-4 bg-teal-600 hover:bg-teal-700 text-white" asChild>
+            <Button size="lg" className="gap-4 bg-orange-600 hover:bg-orange-700 text-white" asChild>
               <Link href="/auth/login">
                 Demo talep edin <PhoneCall className="w-4 h-4" />
-              </Link>
-            </Button>
-            <Button size="lg" className="gap-4" asChild>
-              <Link href="/auth/sign-up">
-                Ücretsiz başlayın <MoveRight className="w-4 h-4" />
               </Link>
             </Button>
           </div>

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useState } from "react";
@@ -82,35 +83,37 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
+    <>
+      <LoadingScreen />
+      <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-background via-accent/5 to-background p-6">
       <div className="w-full max-w-md">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Ana Sayfaya Dön
         </Link>
         
-        <Card className="border-border bg-card shadow-xl">
+        <Card className="border-border bg-white shadow-xl">
           <CardHeader className="text-center pb-6">
-            <CardTitle className="text-3xl text-card-foreground">
+            <CardTitle className="text-3xl text-gray-900">
               Giriş Yap
             </CardTitle>
-            <CardDescription className="text-muted-foreground">
+            <CardDescription className="text-gray-600">
               Wellscore hesabınıza giriş yapın
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-gray-700">Email</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="email"
                     type="email"
-                    className="pl-9"
+                    className="pl-9 text-gray-900"
                     placeholder="email@sirket.com"
                     required
                     value={email}
@@ -121,13 +124,13 @@ export default function LoginPage() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Şifre</Label>
+                <Label htmlFor="password" className="text-gray-700">Şifre</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
                     type="password"
-                    className="pl-9"
+                    className="pl-9 text-gray-900"
                     placeholder="••••••••"
                     required
                     value={password}
@@ -137,38 +140,38 @@ export default function LoginPage() {
                 </div>
               </div>
               
-              {error && (
+                {error && (
                 <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
                   {error}
                 </div>
-              )}
+                )}
               
-              <Button 
-                type="submit" 
-                className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-12" 
-                disabled={isLoading}
-              >
-                {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
-              </Button>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-orange-600 text-white hover:bg-orange-700 h-12" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
+                </Button>
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
+                  <span className="bg-white px-2 text-gray-500">
                     veya
                   </span>
                 </div>
               </div>
 
               <div className="text-center text-sm">
-                <p className="text-muted-foreground mb-2">
+                <p className="text-gray-600 mb-2">
                   Şirketinizi henüz kaydettiniz mi?
                 </p>
                 <Link
                   href="/auth/hr-signup"
-                  className="text-primary underline underline-offset-4 hover:text-primary/80 font-medium"
+                  className="text-orange-600 underline underline-offset-4 hover:text-orange-700 font-medium"
                 >
                   Şirket Kaydı Yapın
                 </Link>
@@ -177,10 +180,11 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="mt-4 text-center text-xs text-muted-foreground">
+        <p className="mt-4 text-center text-xs text-gray-600">
           Çalışan mısınız? Davet mailinizden şifrenizi oluşturun.
         </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

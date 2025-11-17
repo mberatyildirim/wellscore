@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Building2, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -24,9 +25,18 @@ export function Navbar() {
           : 'bg-background/95 border-border'
       }`}
     >
-      <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="w-4"></div>
+      <div className="container flex h-16 items-center justify-between px-4 md:px-6">
+        <Link href="/" className="flex items-center gap-2">
+          <Image 
+            src="/logo.svg" 
+            alt="WellScore Logo" 
+            width={40} 
+            height={40}
+            className="w-10 h-10"
+          />
+          <span className={`text-xl font-bold ${scrolled ? 'text-white' : 'text-gray-900'}`}>
+            WellScore
+          </span>
         </Link>
 
         <nav className="flex items-center gap-3">
@@ -44,7 +54,7 @@ export function Navbar() {
           <Button 
             variant="default" 
             size="sm"
-            className="bg-teal-600 hover:bg-teal-700 text-white"
+            className="bg-orange-600 hover:bg-orange-700 text-white"
             asChild
           >
             <Link href="/employee/dashboard">

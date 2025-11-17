@@ -66,8 +66,8 @@ export function FeaturesSection() {
             return (
               <Card key={idx} className="border-border hover:border-primary/30 transition-colors">
                 <CardContent className="pt-6">
-                  <div className="rounded-lg bg-teal-50 w-12 h-12 flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-teal-600" />
+                  <div className="rounded-lg bg-orange-50 w-12 h-12 flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-orange-600" />
                   </div>
                   <h3 className="font-semibold text-lg mb-2 text-black">{feature.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">

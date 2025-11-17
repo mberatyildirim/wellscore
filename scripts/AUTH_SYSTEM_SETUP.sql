@@ -181,6 +181,8 @@ CREATE TABLE events (
   start_time TIMESTAMPTZ NOT NULL,
   end_time TIMESTAMPTZ NOT NULL,
   max_participants INTEGER,
+  base_price DECIMAL(10,2) DEFAULT 0,
+  per_person_price DECIMAL(10,2) DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -381,6 +383,122 @@ INSERT INTO marketplace_services (provider_name, service_name, description, cate
 ('Career Boost', 'Profesyonel Gelişim Koçluğu', 'Kişisel kariyer danışmanlığı', 'Kariyer', '15.000-30.000 TL', '/placeholder.svg'),
 ('Financial Wellness', 'Mali Planlama Eğitimi', 'Kişisel finans yönetimi workshopu', 'Finansal Güvenlik', '8.000-15.000 TL', '/placeholder.svg'),
 ('Social Connect', 'Takım Etkinlikleri', 'Aylık sosyal aktivite organizasyonu', 'Sosyal Bağlar', '20.000-40.000 TL', '/placeholder.svg');
+
+-- ========================================
+-- SEED DATA: EVENTS (Her dimension için 3'er etkinlik)
+-- ========================================
+
+-- Fiziksel Sağlık Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Boğazda Yoga Seansı', 'Boğaz manzarasında profesyonel eğitmen eşliğinde sabah yoga seansı. Tüm seviyeler için uygun, rahatlama ve esneklik odaklı.', 'physical', 'Kuruçeşme Sahil, Beşiktaş', NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days' + INTERVAL '2 hours', 25, 500.00, 150.00),
+  ('Ofis İçi Fitness Challenge', 'Eğlenceli takım yarışmaları ile 30 günlük fitness programı. Günlük egzersiz rutinleri, beslenme önerileri ve motivasyon desteği.', 'hybrid', 'Şirket Ofisi / Online', NOW() + INTERVAL '10 days', NOW() + INTERVAL '40 days', 50, 2000.00, 200.00),
+  ('Doğa Yürüyüşü ve Nefes Egzersizleri', 'Belgrad Ormanında uzman rehber eşliğinde doğa yürüyüşü ve nefes egzersizleri. Stres azaltma ve enerji artırma.', 'physical', 'Belgrad Ormanı, Sarıyer', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days' + INTERVAL '3 hours', 30, 300.00, 100.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Physical Health';
+
+-- Zihinsel Sağlık Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Mindfulness ve Meditasyon Workshop', 'Stres yönetimi ve farkındalık teknikleri öğrenin. Uzman psikolog eşliğinde interaktif meditasyon seansları.', 'online', NULL, NOW() + INTERVAL '5 days', NOW() + INTERVAL '5 days' + INTERVAL '2 hours', 40, 1000.00, 250.00),
+  ('Yaratıcı Yazma Atölyesi', 'Düşüncelerinizi ifade etme ve zihinsel berraklık için yaratıcı yazma teknikleri. Deneyimli yazarlarla pratik uygulamalar.', 'physical', 'Beyoğlu Sanat Merkezi', NOW() + INTERVAL '12 days', NOW() + INTERVAL '12 days' + INTERVAL '3 hours', 20, 800.00, 300.00),
+  ('Dijital Detoks Kampı', 'Hafta sonu boyunca teknolojiden uzak, doğa ile iç içe zihin dinlendirme kampı. Yoga, meditasyon ve grup aktiviteleri.', 'physical', 'Şile Kamp Alanı', NOW() + INTERVAL '21 days', NOW() + INTERVAL '23 days', 15, 3000.00, 800.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Mental Health';
+
+-- Duygusal İyilik Hali Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Pozitif Psikoloji Semineri', 'Mutluluk ve yaşam doyumunu artıran bilimsel yaklaşımlar. Uygulamalı pozitif psikoloji teknikleri.', 'online', NULL, NOW() + INTERVAL '8 days', NOW() + INTERVAL '8 days' + INTERVAL '2 hours', 50, 500.00, 200.00),
+  ('Duygusal Zeka Geliştirme Programı', '4 haftalık duygusal zeka ve empati geliştirme programı. Kişisel ve profesyonel ilişkilerde güçlenme.', 'hybrid', 'Şirket Ofisi / Online', NOW() + INTERVAL '15 days', NOW() + INTERVAL '43 days', 30, 2500.00, 400.00),
+  ('Sanat Terapi Atölyesi', 'Resim ve müzik ile duyguları ifade etme. Profesyonel sanat terapisti eşliğinde rahatlatıcı ve öğretici deneyim.', 'physical', 'Kadıköy Sanat Galerisi', NOW() + INTERVAL '18 days', NOW() + INTERVAL '18 days' + INTERVAL '3 hours', 25, 600.00, 250.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Emotional Wellbeing';
+
+-- Sosyal Bağlar Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Takım Çalışması ve İletişim Workshop', 'Etkili iletişim ve işbirliği becerileri geliştirme. Eğlenceli grup aktiviteleri ve rol oyunları.', 'physical', 'Maslak Toplantı Merkezi', NOW() + INTERVAL '6 days', NOW() + INTERVAL '6 days' + INTERVAL '4 hours', 40, 1500.00, 300.00),
+  ('Networking Kahve Buluşması', 'Farklı departmanlardan çalışanlarla informal networking. Kahve ve tatlı ikramları eşliğinde sosyal bağlar kurma.', 'physical', 'Şirket Kafeteryası', NOW() + INTERVAL '11 days', NOW() + INTERVAL '11 days' + INTERVAL '2 hours', 50, 0.00, 0.00),
+  ('Gönüllü Sosyal Sorumluluk Projesi', 'Hayvan barınağında gönüllü çalışma. Takım ruhu geliştirme ve topluma katkı sağlama.', 'physical', 'Kemerburgaz Hayvan Barınağı', NOW() + INTERVAL '20 days', NOW() + INTERVAL '20 days' + INTERVAL '4 hours', 35, 500.00, 100.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Social Connections';
+
+-- Kariyer Memnuniyeti Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Kariyer Planlama ve Hedef Belirleme', 'Profesyonel kariyer koçu ile 1-1 görüşme ve kişisel gelişim planı oluşturma. Kariyer hedeflerinizi netleştirin.', 'online', NULL, NOW() + INTERVAL '9 days', NOW() + INTERVAL '9 days' + INTERVAL '1 hour', 20, 2000.00, 500.00),
+  ('Liderlik ve Yönetim Becerileri', '2 günlük yoğun liderlik eğitimi. Vaka çalışmaları, grup tartışmaları ve pratik uygulamalar.', 'physical', 'İş Merkezi Eğitim Salonu', NOW() + INTERVAL '16 days', NOW() + INTERVAL '18 days', 30, 3500.00, 600.00),
+  ('İş-Yaşam Dengesi Stratejileri', 'Zaman yönetimi, önceliklendirme ve verimlilik artırma teknikleri. Deneyimli yaşam koçu ile interaktif oturum.', 'online', NULL, NOW() + INTERVAL '13 days', NOW() + INTERVAL '13 days' + INTERVAL '2 hours', 45, 800.00, 200.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Career Satisfaction';
+
+-- Finansal Güvenlik Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Kişisel Finans Yönetimi Semineri', 'Bütçe oluşturma, tasarruf stratejileri ve yatırım temelleri. Finansal danışman ile pratik örnekler.', 'online', NULL, NOW() + INTERVAL '7 days', NOW() + INTERVAL '7 days' + INTERVAL '2 hours', 60, 500.00, 150.00),
+  ('Emeklilik Planlama Workshop', 'Erken emeklilik stratejileri ve uzun vadeli finansal planlama. Emeklilik fonları ve yatırım araçları hakkında detaylı bilgi.', 'physical', 'Levent Finans Merkezi', NOW() + INTERVAL '19 days', NOW() + INTERVAL '19 days' + INTERVAL '3 hours', 35, 1200.00, 300.00),
+  ('Borç Yönetimi ve Kredi Kullanımı', 'Akıllı kredi kullanımı, borçlardan kurtulma stratejileri. Mali sıkıntılarla başa çıkma yöntemleri.', 'online', NULL, NOW() + INTERVAL '22 days', NOW() + INTERVAL '22 days' + INTERVAL '2 hours', 40, 400.00, 100.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Financial Security';
+
+-- Çevresel Faktörler Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Sürdürülebilirlik ve Çevre Bilinci', 'Çevre dostu yaşam alışkanlıkları ve sürdürülebilir iş yerleri. Geri dönüşüm ve enerji tasarrufu uygulamaları.', 'hybrid', 'Şirket Ofisi / Online', NOW() + INTERVAL '10 days', NOW() + INTERVAL '10 days' + INTERVAL '2 hours', 50, 300.00, 100.00),
+  ('Ofis Ergonomisi ve Sağlık', 'Çalışma alanı düzenlemesi, doğru oturma pozisyonu ve ergonomik ekipman kullanımı. Fizik tedavi uzmanı ile uygulamalı eğitim.', 'physical', 'Şirket Ofisi', NOW() + INTERVAL '14 days', NOW() + INTERVAL '14 days' + INTERVAL '1.5 hours', 40, 600.00, 150.00),
+  ('Şehir Bahçeciliği Workshop', 'Ofiste ve evde bitki yetiştirme, küçük bahçe oluşturma teknikleri. Yeşil alan yaratarak çevre kalitesini artırma.', 'physical', 'Bahçeşehir Botanik Bahçesi', NOW() + INTERVAL '25 days', NOW() + INTERVAL '25 days' + INTERVAL '3 hours', 25, 500.00, 200.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Environmental Factors';
+
+-- Amaç ve Anlam Etkinlikleri
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+SELECT NULL, d.id, e.title, e.description, e.event_type, e.location, e.start_time, e.end_time, e.max_participants, e.base_price, e.per_person_price
+FROM wellbeing_dimensions d
+CROSS JOIN LATERAL (VALUES
+  ('Yaşam Amacı Keşif Atölyesi', 'Değerlerinizi ve tutkularınızı keşfedin. Hayatınıza anlam katan unsurları belirleme ve hedef oluşturma.', 'online', NULL, NOW() + INTERVAL '8 days', NOW() + INTERVAL '8 days' + INTERVAL '3 hours', 30, 1000.00, 300.00),
+  ('Kişisel Gelişim ve Öz Farkındalık', '3 haftalık dönüşümsel kişisel gelişim programı. Yaşam koçu eşliğinde kendinizi keşfetme yolculuğu.', 'hybrid', 'Şirket Ofisi / Online', NOW() + INTERVAL '17 days', NOW() + INTERVAL '38 days', 25, 3000.00, 700.00),
+  ('İlham Verici Liderler Konuşma Serisi', 'Başarılı girişimciler ve liderlerden ilham alın. Motivasyon ve vizyon geliştirme konuşmaları.', 'physical', 'Nişantaşı Konferans Salonu', NOW() + INTERVAL '24 days', NOW() + INTERVAL '24 days' + INTERVAL '2 hours', 100, 0.00, 0.00)
+) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+WHERE d.name = 'Purpose and Meaning';
+
+-- ========================================
+-- HELPER FUNCTIONS
+-- ========================================
+
+-- Function: Request Event Registration (Bypass RLS for employees)
+CREATE OR REPLACE FUNCTION request_event_registration(
+  p_user_id UUID,
+  p_event_id UUID
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  -- Insert event registration with requested status
+  INSERT INTO event_registrations (user_id, event_id, status)
+  VALUES (p_user_id, p_event_id, 'requested')
+  ON CONFLICT (user_id, event_id) DO NOTHING;
+END;
+$$;
+
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION request_event_registration(UUID, UUID) TO authenticated;
 
 -- ========================================
 -- ✅ KURULUM TAMAMLANDI!

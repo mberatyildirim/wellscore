@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ArrowLeft, TrendingDown, Users, CheckCircle } from "lucide-react";
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -13,169 +14,226 @@ export default async function EventsPage() {
     redirect("/auth/login");
   }
 
-  // Fetch user profile to get their company_id (from profiles table)
+  // Fetch user profile to get their company_id
   const { data: userData } = await supabase
     .from("profiles")
     .select("company_id")
     .eq("id", user.id)
     .single();
 
-  // Get all upcoming events
-  const now = new Date().toISOString();
-  const { data: upcomingEvents } = await supabase
+  // Get user's latest survey response to identify weak dimensions
+  const { data: latestResponse } = await supabase
+    .from("survey_responses")
+    .select("id")
+    .eq("user_id", user.id)
+    .order("completed_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  // Get user's dimension scores (to recommend events)
+  const { data: userScores } = await supabase
+    .from("dimension_scores")
+    .select("dimension_id, score")
+    .eq("response_id", latestResponse?.id || "")
+    .order("score", { ascending: true });
+
+  // Get weak dimensions (score < 3.5)
+  const weakDimensionIds = userScores
+    ?.filter((ds: any) => ds.score < 3.5)
+    .map((ds: any) => ds.dimension_id) || [];
+
+  // Get all available events
+  const { data: allEvents } = await supabase
     .from("events")
     .select(`
       *,
       wellbeing_dimensions (
-        name_tr
+        id,
+        name_tr,
+        color
       )
     `)
-    .eq("company_id", userData?.company_id)
-    .gte("start_time", now)
-    .order("start_time", { ascending: true });
+    .order("created_at", { ascending: false });
 
-  // Get past events
-  const { data: pastEvents } = await supabase
-    .from("events")
-    .select(`
-      *,
-      wellbeing_dimensions (
-        name_tr
-      )
-    `)
-    .eq("company_id", userData?.company_id)
-    .lt("start_time", now)
-    .order("start_time", { ascending: false })
-    .limit(10);
+  // Check user's existing event requests
+  const { data: userRequests } = await supabase
+    .from("event_registrations")
+    .select("event_id, status")
+    .eq("user_id", user.id);
 
-  const renderEventCard = (event: any, isPast = false) => (
-    <Card key={event.id} className={`border-border ${isPast ? "bg-muted/50" : "bg-card"}`}>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg text-card-foreground">{event.title}</CardTitle>
-            <CardDescription className="mt-2 text-muted-foreground">
-              {event.description}
-            </CardDescription>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Tarih:</span>
-            <span className="font-medium text-foreground">
-              {new Date(event.start_time).toLocaleDateString("tr-TR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Saat:</span>
-            <span className="font-medium text-foreground">
-              {new Date(event.start_time).toLocaleTimeString("tr-TR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}{" "}
-              -{" "}
-              {new Date(event.end_time).toLocaleTimeString("tr-TR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
-          {event.location && (
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Konum:</span>
-              <span className="font-medium text-foreground">{event.location}</span>
-            </div>
-          )}
-          {event.capacity && (
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">Kapasite:</span>
-              <span className="font-medium text-foreground">{event.capacity} kişi</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Badge variant="outline" className="border-border text-foreground">
-            {event.event_type === "physical" ? "Fiziksel" :
-             event.event_type === "online" ? "Online" : "Hibrit"}
-          </Badge>
-          {event.wellbeing_dimensions && (
-            <Badge className="bg-accent text-accent-foreground">
-              {event.wellbeing_dimensions.name_tr}
-            </Badge>
-          )}
-          {isPast && (
-            <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-              Tamamlandı
-            </Badge>
-          )}
-        </div>
-
-        {!isPast && event.meeting_url && (
-          <Button asChild className="w-full bg-primary text-primary-foreground">
-            <a href={event.meeting_url} target="_blank" rel="noopener noreferrer">
-              Etkinliğe Katıl
-            </a>
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+  const requestedEventIds = new Set(userRequests?.map((r: any) => r.event_id) || []);
+  const approvedEventIds = new Set(
+    userRequests?.filter((r: any) => r.status === "approved").map((r: any) => r.event_id) || []
   );
 
-  return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Etkinlik Takvimi
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Wellbeing etkinliklerine katılın
-            </p>
-          </div>
-          <Button asChild variant="outline" className="border-border">
-            <Link href="/employee/library">
-              Kütüphaneye Dön
-            </Link>
-          </Button>
-        </div>
+  // Separate events into recommended and other
+  const recommendedEvents = allEvents?.filter((e: any) => 
+    weakDimensionIds.includes(e.dimension_id)
+  ) || [];
+  
+  const otherEvents = allEvents?.filter((e: any) => 
+    !weakDimensionIds.includes(e.dimension_id)
+  ) || [];
 
-        <div className="space-y-12">
-          <div>
-            <h2 className="mb-6 text-2xl font-bold text-foreground">
-              Yaklaşan Etkinlikler
-            </h2>
-            {upcomingEvents && upcomingEvents.length > 0 ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {upcomingEvents.map((event) => renderEventCard(event, false))}
-              </div>
-            ) : (
-              <Card className="border-border bg-card">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">Yaklaşan etkinlik bulunmuyor</p>
-                </CardContent>
-              </Card>
+  const renderEventCard = (event: any, isRecommended = false) => {
+    const dimensionColor = event.wellbeing_dimensions?.color || "#6366f1";
+    const isRequested = requestedEventIds.has(event.id);
+    const isApproved = approvedEventIds.has(event.id);
+
+    return (
+      <Card 
+        key={event.id} 
+        className={`border-2 ${isRecommended ? 'border-orange-300 bg-orange-50' : 'border-border bg-card'} flex flex-col`}
+      >
+        <CardHeader className="pb-3">
+          {/* Badges */}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <Badge 
+              variant="outline" 
+              className="text-xs"
+              style={{ 
+                borderColor: dimensionColor,
+                color: dimensionColor 
+              }}
+            >
+              {event.wellbeing_dimensions?.name_tr}
+            </Badge>
+            {isRecommended && (
+              <Badge className="bg-orange-600 text-white text-xs">
+                Sizin İçin Öneriliyor
+              </Badge>
+            )}
+            {isApproved && (
+              <Badge className="bg-green-600 text-white text-xs">
+                <CheckCircle className="w-3 h-3 mr-1" />
+                Onaylandı
+              </Badge>
+            )}
+            {isRequested && !isApproved && (
+              <Badge className="bg-blue-600 text-white text-xs">
+                Talep Edildi
+              </Badge>
             )}
           </div>
+          
+          <CardTitle className="text-base sm:text-lg font-bold text-foreground">
+            {event.title}
+          </CardTitle>
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground">
+            {event.description}
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="flex flex-col flex-1 justify-end">
+          {/* Action Button - Always at bottom */}
+          <div className="mt-auto">
+            {isApproved ? (
+              <Button 
+                disabled
+                className="w-full bg-green-600 text-white text-xs sm:text-sm opacity-80 cursor-not-allowed"
+                size="sm"
+              >
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                Etkinlik Onaylandı
+              </Button>
+            ) : isRequested ? (
+              <Button 
+                disabled
+                className="w-full bg-green-600 text-white text-xs sm:text-sm opacity-80 cursor-not-allowed"
+                size="sm"
+              >
+                <CheckCircle className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                Talep Edildi
+              </Button>
+            ) : (
+              <form action="/api/request-event" method="POST">
+                <input type="hidden" name="event_id" value={event.id} />
+                <input type="hidden" name="user_id" value={user.id} />
+                <Button 
+                  type="submit"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                  size="sm"
+                >
+                  <Users className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                  Talep Et
+                </Button>
+              </form>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
-          {pastEvents && pastEvents.length > 0 && (
-            <div>
-              <h2 className="mb-6 text-2xl font-bold text-foreground">
-                Geçmiş Etkinlikler
-              </h2>
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {pastEvents.map((event) => renderEventCard(event, true))}
-              </div>
-            </div>
-          )}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div>
+            <Button asChild variant="ghost" className="mb-4">
+              <Link href="/employee/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Dashboard'a Dön
+              </Link>
+            </Button>
+            <h1 className="text-4xl font-bold text-foreground flex items-center gap-3">
+              <TrendingDown className="h-10 w-10 text-primary" />
+              Wellbeing Etkinlikleri
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              Size özel etkinlik önerileri ve talep imkanı
+            </p>
+          </div>
         </div>
+
+        {/* Recommended Events */}
+        {recommendedEvents.length > 0 && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
+                Sizin İçin Önerilen Etkinlikler
+              </h2>
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                Anket sonuçlarınıza göre gelişim alanlarınız için öneriler
+              </p>
+            </div>
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+              {recommendedEvents.map((event) => renderEventCard(event, true))}
+            </div>
+          </div>
+        )}
+
+        {/* All Other Events */}
+        {otherEvents.length > 0 && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+                Diğer Etkinlikler
+              </h2>
+              <p className="mt-2 text-sm sm:text-base text-muted-foreground">
+                Tüm wellbeing etkinliklerine göz atın
+              </p>
+            </div>
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+              {otherEvents.map((event) => renderEventCard(event, false))}
+            </div>
+          </div>
+        )}
+
+        {/* No Events */}
+        {(!allEvents || allEvents.length === 0) && (
+          <Card className="border-border">
+            <CardContent className="py-12">
+              <div className="text-center text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Henüz etkinlik bulunmuyor.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

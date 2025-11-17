@@ -1,16 +1,18 @@
 "use client";
 
 // Survey form component for Wellscore assessment
-// Displays 8 dimensions with 5 questions each (total 40 questions)
+// Displays 40 questions one by one with auto-advance on answer selection
 // Uses emoji-based Likert scale (1-5) for responses
 import { useState } from "react";
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { WellbeingDimension, SurveyQuestion } from "@/lib/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { ChevronLeft } from "lucide-react";
 
 // Props interface for the survey form component
 interface SurveyFormProps {
@@ -32,35 +34,46 @@ const EMOJI_SCALE = [
 
 export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
   const router = useRouter();
-  const [currentDimensionIndex, setCurrentDimensionIndex] = useState(0);
+  // Current question index (0 to 39 for 40 questions)
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  // Store all answers as a map of questionId -> score
   const [answers, setAnswers] = useState<Record<string, number>>({});
+  // Loading state for submission
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Error state for displaying errors
   const [error, setError] = useState<string | null>(null);
 
-  const currentDimension = dimensions[currentDimensionIndex];
-  const currentQuestions = questions.filter(
-    (q) => q.dimension_id === currentDimension.id
-  );
+  // Get the current question being displayed
+  const currentQuestion = questions[currentQuestionIndex];
+  // Find the dimension for the current question
+  const currentDimension = dimensions.find(d => d.id === currentQuestion?.dimension_id);
 
-  const progress = ((currentDimensionIndex + 1) / dimensions.length) * 100;
-  const answeredInCurrentDimension = currentQuestions.filter(
-    (q) => answers[q.id] !== undefined
-  ).length;
-  const allCurrentQuestionsAnswered = answeredInCurrentDimension === currentQuestions.length;
+  // Calculate rotation angle based on dimension index (0° to 157.5° in 22.5° increments)
+  const dimensionIndex = dimensions.findIndex(d => d.id === currentQuestion?.dimension_id);
+  const rotationAngle = dimensionIndex >= 0 ? dimensionIndex * 22.5 : 0;
+  
+  // Calculate progress percentage based on answered questions
+  const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+  // Check if all questions have been answered
+  const allQuestionsAnswered = Object.keys(answers).length === questions.length;
 
+  // Handle answer selection and auto-advance to next question
   const handleAnswerChange = (questionId: string, score: number) => {
+    // Save the answer
     setAnswers((prev) => ({ ...prev, [questionId]: score }));
-  };
-
-  const handleNext = () => {
-    if (currentDimensionIndex < dimensions.length - 1) {
-      setCurrentDimensionIndex((prev) => prev + 1);
+    
+    // Auto-advance to next question after a short delay for UX
+    setTimeout(() => {
+      if (currentQuestionIndex < questions.length - 1) {
+        setCurrentQuestionIndex((prev) => prev + 1);
     }
+    }, 300);
   };
 
+  // Navigate to previous question
   const handlePrevious = () => {
-    if (currentDimensionIndex > 0) {
-      setCurrentDimensionIndex((prev) => prev - 1);
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex((prev) => prev - 1);
     }
   };
 
@@ -81,9 +94,9 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
 
       if (userError) throw new Error("Kullanıcı profili bulunamadı: " + userError.message);
       if (!userData?.company_id) throw new Error("Kullanıcı şirket bilgisi eksik");
-
+      
       const companyId = userData.company_id;
-
+      
       // Step 2: Calculate overall score (average of all answers)
       const allScores = Object.values(answers);
       const overallScore = allScores.reduce((sum, score) => sum + score, 0) / allScores.length;
@@ -109,7 +122,7 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
         const question = questions.find(q => q.id === questionId);
         return {
           response_id: responseId,
-          question_id: questionId,
+        question_id: questionId,
           dimension_id: question?.dimension_id,
           answer_value: score,
         };
@@ -160,95 +173,117 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
+      {/* Progress Bar - Always visible */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
-            Boyut {currentDimensionIndex + 1} / {dimensions.length}
-          </span>
-          <span>{Math.round(progress)}% tamamlandı</span>
-        </div>
         <Progress value={progress} className="h-2" />
+        <div className="flex items-center justify-center text-xs md:text-sm text-muted-foreground">
+          <span>Soru {currentQuestionIndex + 1} / {questions.length}</span>
+        </div>
       </div>
 
+      {/* Single Question Card */}
       <Card className="border-border bg-card">
-        <CardHeader>
-          <CardTitle className="text-2xl text-card-foreground">
-            {currentDimension.name_tr}
+        <CardHeader className="pb-4">
+          <div className="flex items-start gap-4">
+            {/* Rotated Logo for Dimension - rotation changes per dimension */}
+            <div className="flex-shrink-0">
+              <Image 
+                src="/logo-variant.svg" 
+                alt="Dimension Icon" 
+                width={48} 
+                height={48}
+                className="w-10 h-10 md:w-12 md:h-12"
+                style={{ transform: `rotate(${rotationAngle}deg)` }}
+              />
+            </div>
+            
+            <div className="flex-1">
+              {/* Dimension name - hidden on mobile */}
+              <div className="hidden md:block">
+                <CardTitle className="text-lg md:text-xl text-orange-600">
+                  {currentDimension?.name_tr}
           </CardTitle>
-          <CardDescription className="text-muted-foreground">
-            {currentDimension.description}
+                <CardDescription className="text-muted-foreground text-sm mt-1">
+                  {currentDimension?.description}
           </CardDescription>
+              </div>
+              
+              {/* Only show dimension name on mobile, no description */}
+              <div className="block md:hidden">
+                <CardTitle className="text-base text-orange-600">
+                  {currentDimension?.name_tr}
+                </CardTitle>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-8">
-          {currentQuestions.map((question, index) => (
-            <div key={question.id} className="space-y-3">
-              <p className="font-medium text-card-foreground">
-                {index + 1}. {question.question_text_tr}
+        
+        <CardContent className="space-y-6">
+          {/* Question Text */}
+          <div className="bg-orange-50 rounded-lg p-4 md:p-6">
+            <p className="font-semibold text-base md:text-lg text-card-foreground text-center">
+              {currentQuestion?.question_text_tr}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3">
+          </div>
+
+          {/* Answer Options - Horizontal layout with emoji + text */}
+          <div className="flex flex-col gap-2 md:gap-3">
                 {EMOJI_SCALE.map((option) => (
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => handleAnswerChange(question.id, option.value)}
-                    className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:scale-105 ${
-                      answers[question.id] === option.value
-                        ? "border-primary bg-accent"
-                        : "border-border bg-background"
+                onClick={() => handleAnswerChange(currentQuestion.id, option.value)}
+                className={`flex items-center gap-3 md:gap-4 rounded-lg border-2 px-4 py-2.5 md:py-3 transition-all hover:scale-[1.02] active:scale-95 ${
+                  answers[currentQuestion.id] === option.value
+                    ? "border-orange-600 bg-orange-50 shadow-md"
+                    : "border-border bg-background hover:border-orange-300"
                     }`}
                   >
-                    <span className="text-3xl">{option.emoji}</span>
-                    <span className="text-xs text-center text-muted-foreground font-medium">
+                <span className="text-2xl md:text-3xl flex-shrink-0">{option.emoji}</span>
+                <span className="text-sm md:text-base text-left text-muted-foreground font-medium flex-1">
                       {option.label}
                     </span>
                   </button>
                 ))}
               </div>
-            </div>
-          ))}
         </CardContent>
       </Card>
 
+      {/* Error Display */}
       {error && (
         <Card className="border-destructive bg-destructive/10">
-          <CardContent className="pt-6">
-            <p className="text-sm text-destructive">{error}</p>
+          <CardContent className="pt-4 md:pt-6">
+            <p className="text-xs md:text-sm text-destructive text-center">{error}</p>
           </CardContent>
         </Card>
       )}
 
-      <div className="flex items-center justify-between">
+      {/* Navigation Buttons */}
+      <div className="flex items-center justify-between gap-3">
+        {/* Previous Button - Always visible but disabled on first question */}
         <Button
           variant="outline"
           onClick={handlePrevious}
-          disabled={currentDimensionIndex === 0}
-          className="border-border text-foreground"
+          disabled={currentQuestionIndex === 0}
+          className="border-border text-foreground text-xs md:text-base px-3 md:px-4 py-2 md:py-2.5"
+          size="sm"
         >
+          <ChevronLeft className="w-4 h-4 mr-1" />
           Önceki
         </Button>
 
-        {currentDimensionIndex < dimensions.length - 1 ? (
-          <Button
-            onClick={handleNext}
-            disabled={!allCurrentQuestionsAnswered}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            Sonraki Boyut
-          </Button>
-        ) : (
+        {/* Submit Button - Only show on last question if all answered */}
+        {currentQuestionIndex === questions.length - 1 && allQuestionsAnswered && (
           <Button
             onClick={handleSubmit}
-            disabled={!allCurrentQuestionsAnswered || isSubmitting}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isSubmitting}
+            className="bg-orange-600 text-white hover:bg-orange-700 text-xs md:text-base px-4 md:px-6 py-2 md:py-2.5"
+            size="sm"
           >
             {isSubmitting ? "Gönderiliyor..." : "Anketi Tamamla"}
           </Button>
         )}
-      </div>
-
-      <div className="text-center text-sm text-muted-foreground">
-        Bu boyuttaki sorular: {answeredInCurrentDimension} / {currentQuestions.length}
       </div>
     </div>
   );
