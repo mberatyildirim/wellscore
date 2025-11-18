@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, TrendingDown, Users, CheckCircle } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, TrendingDown, Users, CheckCircle, Sparkles } from "lucide-react";
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -66,20 +67,114 @@ export default async function EventsPage() {
     userRequests?.filter((r: any) => r.status === "approved").map((r: any) => r.event_id) || []
   );
 
-  // Separate events into recommended and other
+  // Separate events: special (Fitty), recommended, and other
+  const specialEvents = allEvents?.filter((e: any) => e.dimension_id === null) || [];
+  
   const recommendedEvents = allEvents?.filter((e: any) => 
-    weakDimensionIds.includes(e.dimension_id)
+    e.dimension_id !== null && weakDimensionIds.includes(e.dimension_id)
   ) || [];
   
   const otherEvents = allEvents?.filter((e: any) => 
-    !weakDimensionIds.includes(e.dimension_id)
+    e.dimension_id !== null && !weakDimensionIds.includes(e.dimension_id)
   ) || [];
 
-  const renderEventCard = (event: any, isRecommended = false) => {
+  const renderEventCard = (event: any, isRecommended = false, isSpecial = false) => {
     const dimensionColor = event.wellbeing_dimensions?.color || "#6366f1";
     const isRequested = requestedEventIds.has(event.id);
     const isApproved = approvedEventIds.has(event.id);
 
+    // Special styling for Fitty
+    if (isSpecial) {
+      return (
+        <Card 
+          key={event.id} 
+          className="border-2 border-orange-500 bg-gradient-to-br from-orange-50 via-white to-orange-50 shadow-xl hover:shadow-2xl transition-all duration-300 relative overflow-hidden"
+        >
+          {/* Special Badge - Top Right */}
+          <div className="absolute top-4 right-4 z-10">
+            <Badge className="bg-gradient-to-r from-orange-600 to-orange-700 text-white text-xs sm:text-sm font-bold shadow-lg">
+              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Özel Hizmet
+            </Badge>
+          </div>
+
+          {/* Full Width Horizontal Layout */}
+          <div className="flex flex-col lg:flex-row gap-6 p-6 sm:p-8">
+            {/* Left Section - Logo */}
+            <div className="flex-shrink-0 flex items-center justify-center lg:justify-start">
+              <div className="relative w-40 h-16 sm:w-48 sm:h-20">
+                <Image 
+                  src="/fitty-logo.png" 
+                  alt="Fitty" 
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Middle Section - Content */}
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold text-orange-900 mb-2">
+                  {event.title}
+                </h3>
+                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
+                  {event.description}
+                </p>
+              </div>
+
+              {/* Event Type & Location Badges */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="text-xs sm:text-sm border-orange-400 text-orange-800 bg-orange-50 font-semibold">
+                  🌟 {event.event_type}
+                </Badge>
+                <Badge variant="outline" className="text-xs sm:text-sm border-orange-300 text-orange-700">
+                  📍 {event.location}
+                </Badge>
+              </div>
+            </div>
+
+            {/* Right Section - Action Button */}
+            <div className="flex-shrink-0 flex items-center lg:w-64">
+              {isApproved ? (
+                <Button 
+                  disabled
+                  className="w-full bg-green-600 text-white text-sm sm:text-base opacity-80 cursor-not-allowed"
+                  size="lg"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  Etkinlik Onaylandı
+                </Button>
+              ) : isRequested ? (
+                <Button 
+                  disabled
+                  className="w-full bg-green-600 text-white text-sm sm:text-base opacity-80 cursor-not-allowed"
+                  size="lg"
+                >
+                  <CheckCircle className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  Talep Edildi
+                </Button>
+              ) : (
+                <form action="/api/request-event" method="POST" className="w-full">
+                  <input type="hidden" name="event_id" value={event.id} />
+                  <input type="hidden" name="user_id" value={user.id} />
+                  <Button 
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-sm sm:text-base font-semibold shadow-lg"
+                    size="lg"
+                  >
+                    <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    Hemen Talep Et
+                  </Button>
+                </form>
+              )}
+            </div>
+          </div>
+        </Card>
+      );
+    }
+
+    // Regular event card
     return (
       <Card 
         key={event.id} 
@@ -172,8 +267,8 @@ export default async function EventsPage() {
         <div className="flex items-start justify-between">
           <div>
             <Button asChild variant="ghost" className="mb-4">
-              <Link href="/employee/dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
+              <Link href="/employee/dashboard" style={{ color: '#6b7280' }}>
+                <ArrowLeft className="mr-2 h-4 w-4" style={{ color: '#6b7280' }}/>
                 Dashboard'a Dön
               </Link>
             </Button>
@@ -186,6 +281,25 @@ export default async function EventsPage() {
             </p>
           </div>
         </div>
+
+        {/* Special Events - Fitty (Always on Top) */}
+        {specialEvents.length > 0 && (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold text-orange-900 flex items-center gap-2">
+                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
+                Özel İş Ortağımız
+              </h2>
+              <p className="mt-2 text-sm sm:text-base text-gray-700">
+                Tüm çalışanlarımız için özel olarak hazırlanmış esnek spor ve wellness çözümü
+              </p>
+            </div>
+            {/* Full Width Container - Not Grid */}
+            <div className="w-full">
+              {specialEvents.map((event) => renderEventCard(event, false, true))}
+            </div>
+          </div>
+        )}
 
         {/* Recommended Events */}
         {recommendedEvents.length > 0 && (
@@ -200,7 +314,7 @@ export default async function EventsPage() {
               </p>
             </div>
             <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-              {recommendedEvents.map((event) => renderEventCard(event, true))}
+              {recommendedEvents.map((event) => renderEventCard(event, true, false))}
             </div>
           </div>
         )}
@@ -218,7 +332,7 @@ export default async function EventsPage() {
               </p>
             </div>
             <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-              {otherEvents.map((event) => renderEventCard(event, false))}
+              {otherEvents.map((event) => renderEventCard(event, false, false))}
             </div>
           </div>
         )}

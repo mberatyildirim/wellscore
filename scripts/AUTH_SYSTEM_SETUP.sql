@@ -175,7 +175,7 @@ CREATE TABLE events (
   dimension_id UUID REFERENCES wellbeing_dimensions(id),
   title TEXT NOT NULL,
   description TEXT,
-  event_type TEXT CHECK (event_type IN ('physical', 'online', 'hybrid')),
+  event_type TEXT CHECK (event_type IN ('physical', 'online', 'hybrid', 'Tüm ihtiyaçlarınız için')),
   location TEXT,
   meeting_url TEXT,
   start_time TIMESTAMPTZ NOT NULL,
@@ -475,6 +475,26 @@ CROSS JOIN LATERAL (VALUES
   ('İlham Verici Liderler Konuşma Serisi', 'Başarılı girişimciler ve liderlerden ilham alın. Motivasyon ve vizyon geliştirme konuşmaları.', 'physical', 'Nişantaşı Konferans Salonu', NOW() + INTERVAL '24 days', NOW() + INTERVAL '24 days' + INTERVAL '2 hours', 100, 0.00, 0.00)
 ) AS e(title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
 WHERE d.name = 'Purpose and Meaning';
+
+-- ========================================
+-- ÖZEL HİZMET: FİTTY - Esnek Spor ve Wellness
+-- ========================================
+-- Fitty: Tüm kategoriler için geçerli olan özel iş ortağımız
+-- dimension_id NULL olarak işaretlenmiştir (tüm boyutları kapsar)
+INSERT INTO events (company_id, dimension_id, title, description, event_type, location, start_time, end_time, max_participants, base_price, per_person_price)
+VALUES (
+  NULL, -- Tüm şirketler için geçerli
+  NULL, -- Tüm wellbeing boyutları için geçerli (özel hizmet)
+  'Fitty - Esnek Spor ve Wellness Programı', -- Etkinlik başlığı
+  'Üyelik gerektirmeden 500+ spor salonunda, 60+ şehirde dilediğiniz zaman spor yapın. Kullandığınız kadar ödeyin, yaptığınız antrenmanlarda puan kazanın. Yoga, pilates, fitness, yüzme ve daha fazlası - tek bir uygulama ile tüm spor aktivitelerine erişim.', -- Açıklama
+  'Tüm ihtiyaçlarınız için', -- Tüm etkinlik tipleri için geçerli (özel kategori)
+  'Türkiye Geneli - 500+ Anlaşmalı Spor Salonu', -- Lokasyon
+  NOW(), -- Hemen başlıyor
+  NOW() + INTERVAL '365 days', -- 1 yıl boyunca geçerli
+  999999, -- Sınırsız katılımcı
+  NULL, -- Şirkete özel fiyatlandırma - teklif alınmalı
+  NULL -- Kişi başı fiyat - teklif alınmalı
+);
 
 -- ========================================
 -- HELPER FUNCTIONS
