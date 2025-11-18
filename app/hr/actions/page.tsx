@@ -1,79 +1,148 @@
+'use client';
+
 // HR Actions & Events Management
 // Lists all available wellbeing events, shows demand analysis, and allows HR to take action
-import { redirect } from 'next/navigation';
-import { createClient } from "@/lib/supabase/server";
+import { useState, useEffect } from 'react';
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, Users, TrendingDown, FileText, DollarSign, Mail, Sparkles } from "lucide-react";
+import { useRouter } from 'next/navigation';
 
-export default async function HRActionsPage() {
-  const supabase = await createClient();
+export default function HRActionsPage() {
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
+  const [events, setEvents] = useState<any[]>([]);
+  const [lowScoresByDimension, setLowScoresByDimension] = useState<Record<string, number>>({});
+  const [requestsByEvent, setRequestsByEvent] = useState<Record<string, number>>({});
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [dimensions, setDimensions] = useState<any[]>([]);
+  const router = useRouter();
 
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth/login");
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient();
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push("/auth/login");
+        return;
+      }
 
-  // Get HR profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*, companies(name)")
-    .eq("id", user.id)
-    .single();
+      // Get HR profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*, companies(name)")
+        .eq("id", user.id)
+        .single();
 
-  if (!profile || profile.role !== "hr_admin") redirect("/auth/login");
+      if (!profileData || profileData.role !== "hr_admin") {
+        router.push("/auth/login");
+        return;
+      }
 
-  // Fetch all events with dimension info
-  const { data: events } = await supabase
-    .from("events")
-    .select(`
-      *,
-      wellbeing_dimensions(id, name_tr, color)
-    `)
-    .order("created_at", { ascending: false });
+      setProfile(profileData);
 
-  // Get all dimension scores for company employees to calculate need
-  const { data: dimensionScores } = await supabase
-    .from("dimension_scores")
-    .select(`
-      dimension_id,
-      score,
-      survey_responses!inner(
-        id,
-        profiles!inner(company_id)
-      )
-    `)
-    .eq("survey_responses.profiles.company_id", profile.company_id);
+      // Get all dimensions for filtering
+      const { data: dimensionsData } = await supabase
+        .from("wellbeing_dimensions")
+        .select("id, name_tr")
+        .order("order_index", { ascending: true });
+      
+      setDimensions(dimensionsData || []);
 
-  // Calculate employees with low scores per dimension (score < 3.0)
-  const lowScoresByDimension: Record<string, number> = {};
-  dimensionScores?.forEach((ds: any) => {
-    if (ds.score < 3.0) {
-      lowScoresByDimension[ds.dimension_id] = (lowScoresByDimension[ds.dimension_id] || 0) + 1;
+      // Fetch all events
+      const { data: eventsData } = await supabase
+        .from("events")
+        .select(`
+          *,
+          wellbeing_dimensions(id, name_tr, color)
+        `)
+        .order("created_at", { ascending: false });
+
+      setEvents(eventsData || []);
+
+      // Get dimension scores
+      const { data: dimensionScores } = await supabase
+        .from("dimension_scores")
+        .select(`
+          dimension_id,
+          score,
+          survey_responses!inner(
+            id,
+            profiles!inner(company_id)
+          )
+        `)
+        .eq("survey_responses.profiles.company_id", profileData.company_id);
+
+      // Calculate low scores
+      const lowScores: Record<string, number> = {};
+      dimensionScores?.forEach((ds: any) => {
+        if (ds.score < 3.0) {
+          lowScores[ds.dimension_id] = (lowScores[ds.dimension_id] || 0) + 1;
+        }
+      });
+      setLowScoresByDimension(lowScores);
+
+      // Get registrations
+      const { data: registrations, error: regError } = await supabase
+        .from("event_registrations")
+        .select(`
+          event_id,
+          status,
+          user_id,
+          profiles!inner(company_id)
+        `)
+        .eq("profiles.company_id", profileData.company_id)
+        .eq("status", "requested");
+
+      console.log('[HR Actions] Event registrations:', registrations);
+      console.log('[HR Actions] Registration error:', regError);
+      console.log('[HR Actions] Company ID:', profileData.company_id);
+
+      const requests: Record<string, number> = {};
+      registrations?.forEach((reg: any) => {
+        requests[reg.event_id] = (requests[reg.event_id] || 0) + 1;
+      });
+      console.log('[HR Actions] Requests by event:', requests);
+      setRequestsByEvent(requests);
+
+      setLoading(false);
     }
-  });
 
-  // Get event registration requests for this company
-  const { data: registrations } = await supabase
-    .from("event_registrations")
-    .select(`
-      event_id,
-      profiles!inner(company_id)
-    `)
-    .eq("profiles.company_id", profile.company_id)
-    .eq("status", "requested");
+    loadData();
+  }, [router]);
 
-  // Count requests per event
-  const requestsByEvent: Record<string, number> = {};
-  registrations?.forEach((reg: any) => {
-    requestsByEvent[reg.event_id] = (requestsByEvent[reg.event_id] || 0) + 1;
-  });
+  if (loading) {
+    return <div className="min-h-screen bg-white p-4 sm:p-6 flex items-center justify-center">
+      <div className="text-center">Yükleniyor...</div>
+    </div>;
+  }
 
-  // Separate special events (Fitty) from regular events
-  const specialEvents = events?.filter((e: any) => e.dimension_id === null) || [];
-  const regularEvents = events?.filter((e: any) => e.dimension_id !== null) || [];
+  // Filter events based on selected dimension
+  const getFilteredEvents = () => {
+    if (selectedFilter === 'all') return events;
+    if (selectedFilter === 'special') {
+      // Special events (Fitty) - dimension_id is null
+      return events.filter((e: any) => e.dimension_id === null);
+    }
+    // Filter by dimension
+    return events.filter((e: any) => e.dimension_id === selectedFilter);
+  };
+
+  const filteredEvents = getFilteredEvents();
+  const specialEvents = filteredEvents?.filter((e: any) => e.dimension_id === null) || [];
+  const regularEvents = filteredEvents?.filter((e: any) => e.dimension_id !== null) || [];
+
+  // Build filter options: All + Dimensions
+  const filterOptions = [
+    { value: 'all', label: 'Tümü' },
+    ...dimensions.map(d => ({ value: d.id, label: d.name_tr })),
+    { value: 'special', label: 'Özel Hizmetler' },
+  ];
 
   return (
     <div className="min-h-screen bg-white p-4 sm:p-6">
@@ -94,6 +163,25 @@ export default async function HRActionsPage() {
             <p className="mt-2 text-muted-foreground">
               Çalışan iyi oluşu için etkinlikler düzenleyin ve takip edin
             </p>
+          </div>
+        </div>
+
+        {/* Dimension Filter Tabs */}
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 min-w-max pb-2">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedFilter(option.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                  selectedFilter === option.value
+                    ? 'bg-orange-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 

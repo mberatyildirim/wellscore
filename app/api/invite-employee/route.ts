@@ -69,7 +69,20 @@ export async function POST(request: NextRequest) {
     // Employee will set their own password via password reset email
     const temporaryPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
     
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Use service role client for admin operations
+    const { createClient: createServiceClient } = await import('@supabase/supabase-js');
+    const supabaseAdmin = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!, // This requires service role key
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+    
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password: temporaryPassword,
       email_confirm: false, // Require email confirmation
@@ -102,7 +115,7 @@ export async function POST(request: NextRequest) {
     if (profileError) {
       console.error('[Profile Create Error]:', profileError);
       // Cleanup: delete auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json(
         { error: 'Profil oluşturulamadı' },
         { status: 500 }
@@ -111,19 +124,34 @@ export async function POST(request: NextRequest) {
 
     // Send password reset email (invitation)
     // This will allow the employee to set their own password
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    console.log('[Sending password reset email to]:', email);
+    console.log('[Redirect URL]:', `${siteUrl}/auth/reset-password`);
+    
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/reset-password`,
+      redirectTo: `${siteUrl}/auth/reset-password`,
     });
 
     if (resetError) {
       console.error('[Password Reset Email Error]:', resetError);
-      // Don't fail the entire operation if email fails
-      // Log it for monitoring
+      // Still return success but warn about email
+      return NextResponse.json({
+        success: true,
+        warning: 'Kullanıcı oluşturuldu ancak email gönderilemedi. Lütfen manuel olarak şifre sıfırlama linki gönderin.',
+        message: 'Çalışan oluşturuldu ama email gönderilemedi',
+        employee: {
+          id: authData.user.id,
+          email,
+          full_name,
+        },
+      });
     }
 
+    console.log('[Password reset email sent successfully]');
+    
     return NextResponse.json({
       success: true,
-      message: 'Çalışan başarıyla davet edildi',
+      message: 'Çalışan başarıyla davet edildi ve email gönderildi',
       employee: {
         id: authData.user.id,
         email,

@@ -59,30 +59,30 @@ export default async function EmployeesPage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            <Button variant="ghost" size="icon" asChild className="flex-shrink-0">
               <Link href="/hr/dashboard">
-                <ArrowLeft className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
               </Link>
             </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Çalışanlar</h1>
-              <p className="text-muted-foreground">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground truncate">Çalışanlar</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">
                 {profile.companies?.name} • {employees?.length || 0} çalışan
               </p>
             </div>
           </div>
-          <Button asChild>
+          <Button asChild size="sm" className="w-full sm:w-auto">
             <Link href="/hr/invite">
-              <UserPlus className="mr-2 h-4 w-4" />
-              Yeni Çalışan Ekle
+              <UserPlus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="text-xs sm:text-sm">Yeni Çalışan Ekle</span>
             </Link>
           </Button>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-4">
+        <div className="grid gap-4 sm:gap-6 grid-cols-2 lg:grid-cols-4">
           <Card className="border-border">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -150,57 +150,59 @@ export default async function EmployeesPage() {
                 {employeesWithSurvey.map((employee) => (
                   <div 
                     key={employee.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-lg border border-border hover:bg-accent/50 transition-colors"
                   >
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                    {/* Left Section - Avatar & Info */}
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                      <Avatar className="h-10 w-10 sm:h-12 sm:w-12 flex-shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                           {employee.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
                       
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{employee.full_name}</span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-sm sm:text-base truncate">{employee.full_name}</span>
                           {employee.role === 'hr_admin' && (
                             <Badge variant="outline" className="text-xs">HR Admin</Badge>
                           )}
                           {employee.is_active ? (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                           ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
+                            <XCircle className="h-3 w-3 sm:h-4 sm:w-4 text-red-600 flex-shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Mail className="h-3 w-3" />
-                          <span>{employee.email}</span>
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-1">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{employee.email}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    {/* Right Section - Status & Date */}
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
                       {employee.hasCompletedSurvey ? (
                         <div className="flex items-center gap-3">
                           <div className="text-right">
-                            <div className="text-2xl font-bold text-primary">
+                            <div className="text-xl sm:text-2xl font-bold text-primary">
                               {employee.latestResponse?.overall_score?.toFixed(1) || 'N/A'}
                             </div>
                             <div className="text-xs text-muted-foreground">WellScore</div>
                           </div>
-                          <Badge variant="outline" className="text-green-600 border-green-600">
+                          <Badge variant="outline" className="text-green-600 border-green-600 text-xs whitespace-nowrap">
                             <CheckCircle className="mr-1 h-3 w-3" />
                             Tamamlandı
                           </Badge>
                         </div>
                       ) : (
-                        <Badge variant="outline" className="text-orange-600 border-orange-600">
+                        <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs whitespace-nowrap">
                           Anket Bekleniyor
                         </Badge>
                       )}
 
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        <span>
+                        <Calendar className="h-3 w-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">
                           {new Date(employee.created_at).toLocaleDateString('tr-TR')}
                         </span>
                       </div>

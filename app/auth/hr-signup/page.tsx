@@ -60,7 +60,20 @@ export default function HRSignupPage() {
         },
       });
 
-      if (authError) throw new Error("Hesap oluşturulamadı: " + authError.message);
+      if (authError) {
+        // Translate common Supabase errors to Turkish
+        let errorMessage = authError.message;
+        if (authError.message.includes('User already registered')) {
+          errorMessage = 'Bu email adresi zaten kayıtlı. Lütfen giriş yapın.';
+        } else if (authError.message.includes('Password should be at least')) {
+          errorMessage = 'Şifre en az 6 karakter olmalıdır.';
+        } else if (authError.message.includes('Invalid email')) {
+          errorMessage = 'Geçersiz email adresi. Lütfen kontrol edin.';
+        } else if (authError.message.includes('Unable to validate email')) {
+          errorMessage = 'Email adresi doğrulanamadı. Lütfen geçerli bir email girin.';
+        }
+        throw new Error(errorMessage);
+      }
       if (!authData.user) throw new Error("Kullanıcı oluşturulamadı");
 
       const userId = authData.user.id;
@@ -77,7 +90,13 @@ export default function HRSignupPage() {
         .select()
         .single();
 
-      if (companyError) throw new Error("Şirket kaydı oluşturulamadı: " + companyError.message);
+      if (companyError) {
+        let errorMessage = companyError.message;
+        if (companyError.message.includes('duplicate key')) {
+          errorMessage = 'Bu şirket adı zaten kayıtlı.';
+        }
+        throw new Error(errorMessage);
+      }
       if (!companyData) throw new Error("Şirket verisi alınamadı");
 
       const companyId = companyData.id;
@@ -94,14 +113,22 @@ export default function HRSignupPage() {
           is_active: true,
         });
 
-      if (profileError) throw new Error("Profil oluşturulamadı: " + profileError.message);
+      if (profileError) {
+        let errorMessage = profileError.message;
+        if (profileError.message.includes('duplicate key')) {
+          errorMessage = 'Bu kullanıcı zaten kayıtlı.';
+        }
+        throw new Error(errorMessage);
+      }
 
       // Success!
       toast.success("Şirket kaydı başarılı! 🎉");
-      toast.info("Email adresinizi doğrulayın");
+      toast.info("Email adresinizi doğrulayın ve giriş yapın");
       
-      // Redirect to success page (hard redirect for production)
-      window.location.href = "/auth/sign-up-success";
+      // Redirect to login page (user already has password, just needs to confirm email and login)
+      setTimeout(() => {
+        window.location.href = "/auth/login";
+      }, 2000);
       
     } catch (error: any) {
       console.error("[HR Signup Error]:", error);

@@ -118,12 +118,12 @@ export default async function HRDashboardPage() {
               {company?.name}
           </h1>
             <p className="mt-2 text-sm sm:text-base text-muted-foreground">
-              {company?.industry} • {company?.employee_count} Çalışan
+              {totalEmployees} kayıtlı çalışan
             </p>
           </div>
           <div className="flex gap-2 sm:gap-3 w-full sm:w-auto">
             <Button asChild variant="outline" size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
-              <Link href="/hr/employees">
+              <Link href="/hr/employees" style={{ color: '#6b7280' }}>
                 <Users className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Çalışanlar
               </Link>

@@ -40,6 +40,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.redirect(new URL("/employee/events?info=already_requested", request.url));
     }
 
+    // Get user's profile to check company_id
+    const { data: userProfile } = await supabase
+      .from("profiles")
+      .select("company_id")
+      .eq("id", user.id)
+      .single();
+
+    console.log("[WellScore] User ID:", user.id);
+    console.log("[WellScore] Event ID:", eventId);
+    console.log("[WellScore] User Company ID:", userProfile?.company_id);
+
     // Try direct insert first (RLS is disabled in dev)
     const { error: directError, data: insertData } = await supabase
       .from("event_registrations")
@@ -52,7 +63,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (directError) {
-      console.error("[WellScore] Direct insert failed:", directError.message, directError.details, directError.hint);
+      console.error("[WellScore] Direct insert failed:", directError.message, directError.details, directError.hint, directError.code);
       
       // Try RPC function as fallback
       const { error: rpcError } = await supabase.rpc('request_event_registration', {

@@ -1,82 +1,146 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { redirect } from 'next/navigation';
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, TrendingDown, Users, CheckCircle, Sparkles } from "lucide-react";
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
-export default async function EventsPage() {
-  const supabase = await createClient();
+export default function EventsPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [requestedEventIds, setRequestedEventIds] = useState<Set<number>>(new Set());
+  const [approvedEventIds, setApprovedEventIds] = useState<Set<number>>(new Set());
+  const [weakDimensionIds, setWeakDimensionIds] = useState<string[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
+  const [dimensions, setDimensions] = useState<any[]>([]);
+  const router = useRouter();
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/auth/login");
+  useEffect(() => {
+    async function loadData() {
+      const supabase = createClient();
+      
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        router.push('/auth/login');
+        return;
+      }
+      
+      setUser(currentUser);
+
+      // Fetch user profile
+      const { data: userData } = await supabase
+        .from("profiles")
+        .select("company_id")
+        .eq("id", currentUser.id)
+        .single();
+
+      // Get all dimensions for filtering
+      const { data: dimensionsData } = await supabase
+        .from("wellbeing_dimensions")
+        .select("id, name_tr")
+        .order("order_index", { ascending: true });
+      
+      setDimensions(dimensionsData || []);
+
+      // Get user's latest survey response
+      const { data: latestResponse } = await supabase
+        .from("survey_responses")
+        .select("id")
+        .eq("user_id", currentUser.id)
+        .order("completed_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      // Get user's dimension scores
+      const { data: userScores } = await supabase
+        .from("dimension_scores")
+        .select("dimension_id, score")
+        .eq("response_id", latestResponse?.id || "")
+        .order("score", { ascending: true });
+
+      // Get weak dimensions
+      const weakDims = userScores
+        ?.filter((ds: any) => ds.score < 3.5)
+        .map((ds: any) => ds.dimension_id) || [];
+      
+      setWeakDimensionIds(weakDims);
+
+      // Get all available events
+      const { data: events } = await supabase
+        .from("events")
+        .select(`
+          *,
+          wellbeing_dimensions (
+            id,
+            name_tr,
+            color
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      setAllEvents(events || []);
+
+      // Check user's existing event requests
+      const { data: userRequests } = await supabase
+        .from("event_registrations")
+        .select("event_id, status")
+        .eq("user_id", currentUser.id);
+
+      setRequestedEventIds(new Set(userRequests?.map((r: any) => r.event_id) || []));
+      setApprovedEventIds(new Set(
+        userRequests?.filter((r: any) => r.status === "approved").map((r: any) => r.event_id) || []
+      ));
+
+      setLoading(false);
+    }
+
+    loadData();
+  }, [router]);
+
+  if (loading) {
+    return <div className="min-h-screen bg-white p-4 sm:p-6 flex items-center justify-center">
+      <div className="text-center">Yükleniyor...</div>
+    </div>;
   }
 
-  // Fetch user profile to get their company_id
-  const { data: userData } = await supabase
-    .from("profiles")
-    .select("company_id")
-    .eq("id", user.id)
-    .single();
+  // Filter events based on selected dimension
+  const getFilteredEvents = () => {
+    if (selectedFilter === 'all') return allEvents;
+    if (selectedFilter === 'special') {
+      // Special events (Fitty) - dimension_id is null
+      return allEvents.filter((e: any) => e.dimension_id === null);
+    }
+    // Filter by dimension
+    return allEvents.filter((e: any) => e.dimension_id === selectedFilter);
+  };
 
-  // Get user's latest survey response to identify weak dimensions
-  const { data: latestResponse } = await supabase
-    .from("survey_responses")
-    .select("id")
-    .eq("user_id", user.id)
-    .order("completed_at", { ascending: false })
-    .limit(1)
-    .single();
-
-  // Get user's dimension scores (to recommend events)
-  const { data: userScores } = await supabase
-    .from("dimension_scores")
-    .select("dimension_id, score")
-    .eq("response_id", latestResponse?.id || "")
-    .order("score", { ascending: true });
-
-  // Get weak dimensions (score < 3.5)
-  const weakDimensionIds = userScores
-    ?.filter((ds: any) => ds.score < 3.5)
-    .map((ds: any) => ds.dimension_id) || [];
-
-  // Get all available events
-  const { data: allEvents } = await supabase
-    .from("events")
-    .select(`
-      *,
-      wellbeing_dimensions (
-        id,
-        name_tr,
-        color
-      )
-    `)
-    .order("created_at", { ascending: false });
-
-  // Check user's existing event requests
-  const { data: userRequests } = await supabase
-    .from("event_registrations")
-    .select("event_id, status")
-    .eq("user_id", user.id);
-
-  const requestedEventIds = new Set(userRequests?.map((r: any) => r.event_id) || []);
-  const approvedEventIds = new Set(
-    userRequests?.filter((r: any) => r.status === "approved").map((r: any) => r.event_id) || []
-  );
+  const filteredEvents = getFilteredEvents();
 
   // Separate events: special (Fitty), recommended, and other
-  const specialEvents = allEvents?.filter((e: any) => e.dimension_id === null) || [];
+  const specialEvents = filteredEvents?.filter((e: any) => e.dimension_id === null) || [];
   
-  const recommendedEvents = allEvents?.filter((e: any) => 
+  const recommendedEvents = filteredEvents?.filter((e: any) => 
     e.dimension_id !== null && weakDimensionIds.includes(e.dimension_id)
   ) || [];
   
-  const otherEvents = allEvents?.filter((e: any) => 
+  const otherEvents = filteredEvents?.filter((e: any) => 
     e.dimension_id !== null && !weakDimensionIds.includes(e.dimension_id)
   ) || [];
+
+  // Build filter options: All + Dimensions
+  const filterOptions = [
+    { value: 'all', label: 'Tümü' },
+    ...dimensions.map(d => ({ value: d.id, label: d.name_tr })),
+    { value: 'special', label: 'Özel Hizmetler' },
+  ];
 
   const renderEventCard = (event: any, isRecommended = false, isSpecial = false) => {
     const dimensionColor = event.wellbeing_dimensions?.color || "#6366f1";
@@ -279,6 +343,25 @@ export default async function EventsPage() {
             <p className="mt-2 text-muted-foreground">
               Size özel etkinlik önerileri ve talep imkanı
             </p>
+          </div>
+        </div>
+
+        {/* Dimension Filter Tabs */}
+        <div className="overflow-x-auto">
+          <div className="flex gap-2 min-w-max pb-2">
+            {filterOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => setSelectedFilter(option.value)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                  selectedFilter === option.value
+                    ? 'bg-orange-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
         </div>
 

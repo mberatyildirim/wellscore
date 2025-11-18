@@ -13,14 +13,32 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient()
 
     // Exchange the token for a session
-    const { error } = await supabase.auth.verifyOtp({
+    const { data, error } = await supabase.auth.verifyOtp({
       type: type as any,
       token_hash,
     })
 
-    if (!error) {
-      // If it's a password recovery or signup, redirect to reset password page
-      if (type === 'recovery' || type === 'signup' || type === 'email') {
+    if (!error && data.user) {
+      // For HR signup (type === 'signup' or 'email'), user already set password during registration
+      // So redirect to login instead of password reset
+      if (type === 'signup' || type === 'email') {
+        // Check if user has a profile (means they completed signup)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single()
+        
+        if (profile) {
+          // User already has profile and password, just redirect to login
+          return NextResponse.redirect(
+            new URL('/auth/login?verified=true&message=Email doğrulandı, giriş yapabilirsiniz', requestUrl.origin)
+          )
+        }
+      }
+      
+      // For password recovery (employee invitations), redirect to reset password page
+      if (type === 'recovery') {
         return NextResponse.redirect(new URL('/auth/reset-password', requestUrl.origin))
       }
       
@@ -31,7 +49,7 @@ export async function GET(request: NextRequest) {
 
   // If there's an error, redirect to login with error message
   return NextResponse.redirect(
-    new URL('/auth/login?error=Could not verify token', requestUrl.origin)
+    new URL('/auth/login?error=Token doğrulanamadı. Lütfen tekrar deneyin.', requestUrl.origin)
   )
 }
 

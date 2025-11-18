@@ -73,10 +73,10 @@ export default async function SurveyPage() {
             className="w-16 h-16"
           />
           <div>
-            <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
-            <p className="mt-2 text-muted-foreground">
-              8 boyutta wellbeing durumunuzu değerlendirin (40 soru)
-            </p>
+          <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
+          <p className="mt-2 text-muted-foreground">
+            8 boyutta wellbeing durumunuzu değerlendirin (40 soru)
+          </p>
           </div>
         </div>
         

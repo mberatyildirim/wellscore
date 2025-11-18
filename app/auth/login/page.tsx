@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
-import { useState } from "react";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useEffect } from "react";
 import { ArrowLeft, Mail, Lock } from 'lucide-react';
 import { toast } from "sonner";
 
@@ -26,6 +26,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Show success message if coming from email verification
+  useEffect(() => {
+    const verified = searchParams.get('verified');
+    const message = searchParams.get('message');
+    if (verified === 'true' && message) {
+      toast.success(decodeURIComponent(message));
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +50,20 @@ export default function LoginPage() {
         password,
       });
       
-      if (authError) throw new Error(authError.message);
+      if (authError) {
+        // Translate common Supabase errors to Turkish
+        let errorMessage = authError.message;
+        if (authError.message.includes('Invalid login credentials')) {
+          errorMessage = 'Email veya şifre hatalı. Lütfen tekrar deneyin.';
+        } else if (authError.message.includes('Email not confirmed')) {
+          errorMessage = 'Email adresiniz henüz onaylanmamış. Lütfen gelen kutunuzu kontrol edin.';
+        } else if (authError.message.includes('User not found')) {
+          errorMessage = 'Bu email adresiyle kayıtlı kullanıcı bulunamadı.';
+        } else if (authError.message.includes('Too many requests')) {
+          errorMessage = 'Çok fazla deneme yaptınız. Lütfen birkaç dakika sonra tekrar deneyin.';
+        }
+        throw new Error(errorMessage);
+      }
       if (!authData.user) throw new Error("Giriş başarısız");
 
       // Step 2: Get user profile to check role
