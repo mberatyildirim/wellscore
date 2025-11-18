@@ -16,11 +16,12 @@ import { Label } from "@/components/ui/label";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import Link from "next/link";
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { ArrowLeft, Mail, Lock } from 'lucide-react';
 import { toast } from "sonner";
 
-export default function LoginPage() {
+// Login form component that uses useSearchParams
+function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -209,5 +210,14 @@ export default function LoginPage() {
         </div>
       </div>
     </>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <LoginForm />
+    </Suspense>
   );
 }
