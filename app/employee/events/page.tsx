@@ -139,7 +139,7 @@ export default function EventsPage() {
   const filterOptions = [
     { value: 'all', label: 'Tümü' },
     ...dimensions.map(d => ({ value: d.id, label: d.name_tr })),
-    { value: 'special', label: 'Özel Hizmetler' },
+    { value: 'special', label: 'Kapsamlı Çözümler' },
   ];
 
   const renderEventCard = (event: any, isRecommended = false, isSpecial = false) => {

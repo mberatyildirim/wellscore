@@ -35,11 +35,19 @@ export default async function SurveyPage() {
     .order("order_index", { ascending: true });
 
   // Fetch all survey questions with their dimension info
-  // Questions are ordered by dimension and their index within each dimension
-  const { data: questions } = await supabase
+  // Questions are ordered by dimension order, then by question order within each dimension
+  const { data: questionsRaw } = await supabase
     .from("survey_questions")
-    .select("*, wellbeing_dimensions(name, name_tr)")
+    .select("*, wellbeing_dimensions(name, name_tr, order_index)")
     .order("order_index", { ascending: true });
+
+  // Sort questions by dimension order first, then by question order
+  const questions = questionsRaw?.sort((a, b) => {
+    const dimOrderA = dimensions?.find(d => d.id === a.dimension_id)?.order_index || 0;
+    const dimOrderB = dimensions?.find(d => d.id === b.dimension_id)?.order_index || 0;
+    if (dimOrderA !== dimOrderB) return dimOrderA - dimOrderB;
+    return a.order_index - b.order_index;
+  });
 
   if (!dimensions || !questions) {
     return (
@@ -73,10 +81,10 @@ export default async function SurveyPage() {
             className="w-16 h-16"
           />
           <div>
-          <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
-          <p className="mt-2 text-muted-foreground">
-            8 boyutta wellbeing durumunuzu değerlendirin (40 soru)
-          </p>
+        <h1 className="text-3xl font-bold text-foreground">WellScore Değerlendirmesi</h1>
+        <p className="mt-2 text-muted-foreground">
+          8 boyutta wellbeing durumunuzu değerlendirin (50 soru)
+        </p>
           </div>
         </div>
         

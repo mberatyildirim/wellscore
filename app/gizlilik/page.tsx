@@ -145,7 +145,7 @@ export default function PrivacyPage() {
                     bizimle iletişime geçin:
                   </p>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong className="text-gray-900">E-posta:</strong> privacy@wellscore.com</p>
+                    <p><strong className="text-gray-900">E-posta:</strong> privacy@wellscore.co</p>
                     <p><strong className="text-gray-900">Adres:</strong> [Şirket Adresi]</p>
                     <p><strong className="text-gray-900">Telefon:</strong> [İletişim Numarası]</p>
                   </div>

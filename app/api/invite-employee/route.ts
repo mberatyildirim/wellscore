@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { email, full_name, company_id } = body;
+    const { email, full_name, department, company_id } = body;
 
     // Validate inputs
     if (!email || !full_name || !company_id) {
@@ -107,6 +107,7 @@ export async function POST(request: NextRequest) {
         id: authData.user.id,
         email,
         full_name,
+        department: department || null,
         company_id,
         role: 'employee',
         is_active: true,

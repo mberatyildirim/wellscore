@@ -19,10 +19,10 @@ export function CTASection() {
               className="gap-2 bg-white text-orange-700 hover:bg-white/90 font-semibold shadow-lg border-2 border-white" 
               asChild
             >
-              <Link href="/contact">
+              <a href="mailto:info@wellscore.co?subject=Demo Talep Ediyorum&body=Merhaba,%0D%0A%0D%0AWellScore platformu hakkında demo talep etmek istiyorum.%0D%0A%0D%0AŞirket Adı:%0D%0AYetkili Kişi:%0D%0ATelefon:%0D%0A%0D%0ATeşekkürler.">
                 <Calendar className="w-5 h-5" />
                 Demo Talep Edin
-              </Link>
+              </a>
             </Button>
           </div>
         </div>

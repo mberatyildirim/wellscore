@@ -18,6 +18,7 @@ import Link from 'next/link';
 interface EmployeeInvite {
   email: string;
   full_name: string;
+  department?: string;
   status: 'pending' | 'success' | 'error';
   message?: string;
 }
@@ -29,6 +30,7 @@ export default function InviteEmployeePage() {
   // Manual invite state
   const [manualEmail, setManualEmail] = useState('');
   const [manualName, setManualName] = useState('');
+  const [manualDepartment, setManualDepartment] = useState('');
   
   // CSV upload state
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -64,6 +66,7 @@ export default function InviteEmployeePage() {
         body: JSON.stringify({
           email: manualEmail,
           full_name: manualName,
+          department: manualDepartment || null,
           company_id: profile.company_id,
         }),
       });
@@ -77,6 +80,7 @@ export default function InviteEmployeePage() {
       toast.success(`✅ ${manualName} başarıyla davet edildi!`);
       setManualEmail('');
       setManualName('');
+      setManualDepartment('');
       
     } catch (error: any) {
       console.error('[Manual Invite Error]:', error);
@@ -110,13 +114,14 @@ export default function InviteEmployeePage() {
         const dataLines = lines.slice(1);
         
         const employees: EmployeeInvite[] = dataLines.map((line, index) => {
-          const [email, full_name] = line.split(',').map(s => s.trim());
+          const [email, full_name, department] = line.split(',').map(s => s.trim());
           
           // Basic validation
           if (!email || !full_name) {
             return {
               email: email || `Satır ${index + 2}`,
               full_name: full_name || 'Geçersiz',
+              department,
               status: 'error' as const,
               message: 'Eksik bilgi',
             };
@@ -128,6 +133,7 @@ export default function InviteEmployeePage() {
             return {
               email,
               full_name,
+              department,
               status: 'error' as const,
               message: 'Geçersiz email',
             };
@@ -136,6 +142,7 @@ export default function InviteEmployeePage() {
           return {
             email,
             full_name,
+            department,
             status: 'pending' as const,
           };
         });
@@ -187,6 +194,7 @@ export default function InviteEmployeePage() {
             body: JSON.stringify({
               email: employee.email,
               full_name: employee.full_name,
+              department: employee.department || null,
               company_id: profile.company_id,
             }),
           });
@@ -299,6 +307,18 @@ export default function InviteEmployeePage() {
                     </div>
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Departman (Opsiyonel)</Label>
+                    <Input
+                      id="department"
+                      type="text"
+                      placeholder="İnsan Kaynakları, Finans, Satış, vb."
+                      value={manualDepartment}
+                      onChange={(e) => setManualDepartment(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+
                   <Button 
                     type="submit" 
                     className="w-full" 
@@ -327,7 +347,7 @@ export default function InviteEmployeePage() {
               <CardHeader>
                 <CardTitle>Toplu Çalışan Ekleme</CardTitle>
                 <CardDescription>
-                  CSV dosyası yükleyin. Format: <code>email,full_name</code>
+                  CSV dosyası yükleyin. Format: <code>email,full_name,department</code>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -335,13 +355,13 @@ export default function InviteEmployeePage() {
                 <div className="rounded-lg bg-accent/30 p-4 space-y-2">
                   <h4 className="font-semibold text-sm">CSV Dosya Formatı:</h4>
                   <pre className="text-xs bg-background p-3 rounded border border-border overflow-x-auto">
-{`email,full_name
-ahmet@sirket.com,Ahmet Yılmaz
-ayse@sirket.com,Ayşe Demir
-mehmet@sirket.com,Mehmet Kara`}
+{`email,full_name,department
+ahmet@sirket.com,Ahmet Yılmaz,İnsan Kaynakları
+ayse@sirket.com,Ayşe Demir,Finans
+mehmet@sirket.com,Mehmet Kara,Satış`}
                   </pre>
                   <p className="text-xs text-muted-foreground">
-                    İlk satır başlık olmalı. Sonraki satırlar çalışan bilgileri.
+                    İlk satır başlık olmalı. Departman opsiyoneldir.
                   </p>
                 </div>
 

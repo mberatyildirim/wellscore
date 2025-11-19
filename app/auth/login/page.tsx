@@ -178,7 +178,8 @@ function LoginForm() {
                   {isLoading ? "Giriş yapılıyor..." : "Giriş Yap"}
                 </Button>
 
-              <div className="relative">
+              {/* Register link removed - HR signup is now managed separately */}
+              {/* <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <span className="w-full border-t border-border" />
                 </div>
@@ -199,7 +200,7 @@ function LoginForm() {
                 >
                   Şirket Kaydı Yapın
                 </Link>
-              </div>
+              </div> */}
             </form>
           </CardContent>
         </Card>

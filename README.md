@@ -258,7 +258,7 @@ MIT License - Tüm hakları saklıdır.
 ## 🤝 Support
 
 Sorularınız için:
-- 📧 Email: support@wellscore.com
+- 📧 Email: support@wellscore.co
 - 📚 Docs: [SISTEM_HAZIR.md](./SISTEM_HAZIR.md)
 - 🛠️ Setup: [KURULUM.md](./KURULUM.md)
 

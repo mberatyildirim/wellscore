@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, Users, TrendingDown, FileText, DollarSign, Mail, Sparkles } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
 
 export default function HRActionsPage() {
   const [loading, setLoading] = useState(true);
@@ -18,8 +19,10 @@ export default function HRActionsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [lowScoresByDimension, setLowScoresByDimension] = useState<Record<string, number>>({});
   const [requestsByEvent, setRequestsByEvent] = useState<Record<string, number>>({});
+  const [addingToPlan, setAddingToPlan] = useState<Record<string, boolean>>({});
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [dimensions, setDimensions] = useState<any[]>([]);
+  const [plannedEventIds, setPlannedEventIds] = useState<Set<string>>(new Set());
   const router = useRouter();
 
   useEffect(() => {
@@ -110,6 +113,17 @@ export default function HRActionsPage() {
       console.log('[HR Actions] Requests by event:', requests);
       setRequestsByEvent(requests);
 
+      // Get planned events (event_plans table)
+      const { data: eventPlans } = await supabase
+        .from("event_plans")
+        .select("event_id")
+        .eq("company_id", profileData.company_id)
+        .in("status", ["draft", "quote_requested", "approved"]);
+
+      const plannedIds = new Set(eventPlans?.map((ep: any) => ep.event_id) || []);
+      setPlannedEventIds(plannedIds);
+      console.log('[HR Actions] Planned event IDs:', plannedIds);
+
       setLoading(false);
     }
 
@@ -137,11 +151,39 @@ export default function HRActionsPage() {
   const specialEvents = filteredEvents?.filter((e: any) => e.dimension_id === null) || [];
   const regularEvents = filteredEvents?.filter((e: any) => e.dimension_id !== null) || [];
 
+  // Handle adding event to plan
+  const handleAddToPlan = async (eventId: string) => {
+    setAddingToPlan(prev => ({ ...prev, [eventId]: true }));
+    
+    try {
+      const response = await fetch('/api/add-to-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Plana eklenirken hata oluştu');
+      }
+
+      toast.success('✅ Etkinlik planlarınıza eklendi!');
+      // Add to plannedEventIds
+      setPlannedEventIds(prev => new Set([...prev, eventId]));
+    } catch (error: any) {
+      console.error('[Add to Plan Error]:', error);
+      toast.error(error.message || 'Plana eklenirken hata oluştu');
+    } finally {
+      setAddingToPlan(prev => ({ ...prev, [eventId]: false }));
+    }
+  };
+
   // Build filter options: All + Dimensions
   const filterOptions = [
     { value: 'all', label: 'Tümü' },
     ...dimensions.map(d => ({ value: d.id, label: d.name_tr })),
-    { value: 'special', label: 'Özel Hizmetler' },
+    { value: 'special', label: 'Kapsamlı Çözümler' },
   ];
 
   return (
@@ -267,23 +309,48 @@ export default function HRActionsPage() {
                       </div>
 
                       {/* Right Section - Actions */}
-                      <div className="flex-shrink-0 flex flex-col justify-between gap-4 lg:w-64">
+                      <div className="flex-shrink-0 flex flex-col justify-between gap-3 lg:w-64">
                         <div className="flex items-center gap-2 text-sm text-gray-700 justify-center lg:justify-start">
                           <Mail className="h-4 w-4 text-orange-600" />
                           <span className="font-medium">Şirketinize özel fiyatlandırma</span>
                         </div>
 
+                        {/* Teklif Al Button */}
                         <Button 
                           variant="outline" 
                           className="w-full text-sm sm:text-base border-2 border-orange-500 text-orange-700 hover:bg-orange-50 font-semibold"
                           size="lg"
                           asChild
                         >
-                          <a href={`mailto:info@wellscore.com?subject=Fitty İş Birliği Teklif Talebi`}>
+                          <a href={`mailto:info@wellscore.co?subject=Fitty İş Birliği Teklif Talebi`}>
                             <Mail className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                             Teklif Al
                           </a>
                         </Button>
+
+                        {/* Plana Ekle Button */}
+                        {plannedEventIds.has(event.id) ? (
+                          <Button 
+                            variant="outline" 
+                            className="w-full text-sm sm:text-base border-2 border-green-500 text-green-700 bg-green-50 font-semibold cursor-not-allowed"
+                            size="lg"
+                            disabled
+                          >
+                            <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                            ✓ Planlandı
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="default" 
+                            className="w-full text-sm sm:text-base bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                            size="lg"
+                            onClick={() => handleAddToPlan(event.id)}
+                            disabled={addingToPlan[event.id]}
+                          >
+                            <Calendar className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                            {addingToPlan[event.id] ? 'Ekleniyor...' : 'Plana Ekle'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </Card>
@@ -308,7 +375,6 @@ export default function HRActionsPage() {
               {regularEvents.map((event: any) => {
                 const needCount = lowScoresByDimension[event.dimension_id] || 0;
                 const requestCount = requestsByEvent[event.id] || 0;
-                const hasPrice = event.base_price !== null && event.per_person_price !== null;
                 const dimensionColor = event.wellbeing_dimensions?.color || "#6366f1";
 
                 return (
@@ -365,46 +431,43 @@ export default function HRActionsPage() {
 
                         {/* Pricing */}
                         <div className="pt-3 border-t border-border">
-                          {hasPrice ? (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                                <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
-                                <span>Fiyatlandırma:</span>
-                              </div>
-                              <div className="text-sm sm:text-base font-semibold text-foreground">
-                                {event.base_price.toLocaleString('tr-TR')} ₺ + {event.per_person_price.toLocaleString('tr-TR')} ₺/kişi
-                              </div>
-                            </div>
-                          ) : (
+                          <div className="space-y-2">
                             <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                              <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
-                              <span>Fiyat için teklif alın</span>
+                              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span>Fiyatlandırma:</span>
                             </div>
-                          )}
+                            <div className="text-sm sm:text-base font-semibold text-orange-600">
+                              Şirketinize Özel Fiyat
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              x TL (Sabit) + y TL × Kişi Sayısı
+                            </div>
+                          </div>
                         </div>
                       </div>
 
                       {/* Action Button - Always at bottom */}
                       <div className="mt-auto">
-                        {hasPrice ? (
+                        {plannedEventIds.has(event.id) ? (
                           <Button 
-                            className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                            variant="outline" 
+                            className="w-full text-xs sm:text-sm border-2 border-green-500 text-green-700 bg-green-50 cursor-not-allowed"
                             size="sm"
+                            disabled
                           >
                             <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                            Etkinlik Düzenle
+                            ✓ Planlandı
                           </Button>
                         ) : (
                           <Button 
-                            variant="outline" 
-                            className="w-full text-xs sm:text-sm"
+                            variant="default" 
+                            className="w-full text-xs sm:text-sm bg-orange-600 hover:bg-orange-700 text-white"
                             size="sm"
-                            asChild
+                            onClick={() => handleAddToPlan(event.id)}
+                            disabled={addingToPlan[event.id]}
                           >
-                            <a href={`mailto:info@wellscore.com?subject=Teklif Talebi: ${event.title}`}>
-                              <Mail className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                              Teklif Al
-                            </a>
+                            <Calendar className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                            {addingToPlan[event.id] ? 'Ekleniyor...' : 'Plana Ekle'}
                           </Button>
                         )}
                       </div>

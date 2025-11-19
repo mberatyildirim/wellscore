@@ -1,249 +1,232 @@
-import { redirect } from 'next/navigation';
-import { createClient } from "@/lib/supabase/server";
+'use client';
+
+// Employee Content Library
+// Browse and interact with wellbeing content
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { ArrowLeft, BookOpen, Video, Headphones, FileText, Clock, Bookmark, Heart, ExternalLink, Play } from 'lucide-react';
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
-export default async function LibraryPage() {
-  const supabase = await createClient();
+export default function ContentLibraryPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [content, setContent] = useState<any[]>([]);
+  const [dimensions, setDimensions] = useState<any[]>([]);
+  const [selectedDimension, setSelectedDimension] = useState<string>('all');
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect("/auth/login");
-  }
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  // Get all wellbeing content
-  const { data: content } = await supabase
-    .from("wellbeing_content")
-    .select(`
-      *,
-      wellbeing_dimensions (
-        name_tr
-      )
-    `)
-    .order("created_at", { ascending: false });
+  const fetchData = async () => {
+    const supabase = createClient();
 
-  // Get user's assigned content
-  const { data: assignedContent } = await supabase
-    .from("content_assignments")
-    .select("content_id, completed")
-    .eq("user_id", user.id);
+    // Get user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      router.push("/auth/login");
+      return;
+    }
 
-  const assignedContentMap = new Map(
-    assignedContent?.map((a) => [a.content_id, a.completed]) || []
-  );
+    // Get wellbeing dimensions
+    const { data: dims } = await supabase
+      .from("wellbeing_dimensions")
+      .select("*")
+      .order("order_index");
+    
+    if (dims) setDimensions(dims);
 
-  // Get upcoming events
-  const now = new Date().toISOString();
-  const { data: events } = await supabase
-    .from("events")
-    .select(`
-      *,
-      wellbeing_dimensions (
-        name_tr
-      )
-    `)
-    .gte("start_time", now)
-    .order("start_time", { ascending: true });
+    // Get content library
+    const { data: contentData } = await supabase
+      .from("content_library")
+      .select("*, wellbeing_dimensions(name_tr)")
+      .order("created_at", { ascending: false });
+    
+    if (contentData) setContent(contentData);
 
-  // Filter content by type
-  const articles = content?.filter((c) => c.content_type === "article") || [];
-  const videos = content?.filter((c) => c.content_type === "video") || [];
-  const workshops = content?.filter((c) => c.content_type === "workshop") || [];
-
-  const renderContentCard = (item: any) => {
-    const isAssigned = assignedContentMap.has(item.id);
-    const isCompleted = assignedContentMap.get(item.id);
-
-    return (
-      <Card key={item.id} className="border-border bg-card">
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-lg text-card-foreground">{item.title}</CardTitle>
-              <CardDescription className="mt-2 text-muted-foreground">
-                {item.description}
-              </CardDescription>
-            </div>
-            {item.thumbnail_url && (
-              <img
-                src={item.thumbnail_url || "/placeholder.svg"}
-                alt={item.title}
-                className="ml-4 h-20 w-20 rounded object-cover"
-              />
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
-                {item.content_type === "article" ? "Makale" :
-                 item.content_type === "video" ? "Video" :
-                 item.content_type === "workshop" ? "Workshop" :
-                 item.content_type === "webinar" ? "Webinar" : "Egzersiz"}
-              </Badge>
-              {item.wellbeing_dimensions && (
-                <Badge variant="outline" className="border-border text-foreground">
-                  {item.wellbeing_dimensions.name_tr}
-                </Badge>
-              )}
-              {item.duration_minutes && (
-                <Badge variant="outline" className="border-border text-foreground">
-                  {item.duration_minutes} dk
-                </Badge>
-              )}
-              {isAssigned && (
-                <Badge className="bg-primary text-primary-foreground">
-                  {isCompleted ? "Tamamlandı" : "Size özel"}
-                </Badge>
-              )}
-            </div>
-            {item.url && (
-              <Button asChild size="sm" className="bg-primary text-primary-foreground">
-                <a href={item.url} target="_blank" rel="noopener noreferrer">
-                  İncele
-                </a>
-              </Button>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    );
+    setIsLoading(false);
   };
 
+  const getContentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4" />;
+      case 'podcast':
+        return <Headphones className="h-4 w-4" />;
+      case 'article':
+        return <FileText className="h-4 w-4" />;
+      case 'guide':
+        return <BookOpen className="h-4 w-4" />;
+      default:
+        return <FileText className="h-4 w-4" />;
+    }
+  };
+
+  const getContentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'video':
+        return 'Video';
+      case 'podcast':
+        return 'Podcast';
+      case 'article':
+        return 'Makale';
+      case 'guide':
+        return 'Rehber';
+      case 'tool':
+        return 'Araç';
+      case 'exercise':
+        return 'Egzersiz';
+      default:
+        return type;
+    }
+  };
+
+  const filteredContent = selectedDimension === 'all'
+    ? content
+    : content.filter(c => c.dimension_id === selectedDimension);
+
+  if (isLoading) return <LoadingScreen />;
+
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Wellbeing Kütüphanesi
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Wellbeing yolculuğunuz için içerikler ve etkinlikler
-            </p>
-          </div>
-          <Button asChild variant="outline" className="border-border">
-            <Link href="/employee/events">
-              Etkinlik Takvimi
+    <div className="min-h-screen bg-gradient-to-br from-background via-accent/5 to-background p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl space-y-8">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link href="/employee/dashboard">
+              <ArrowLeft className="h-5 w-5" />
             </Link>
           </Button>
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground flex items-center gap-3">
+              <BookOpen className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              İçerik Kütüphanesi
+            </h1>
+            <p className="mt-2 text-muted-foreground">
+              İyi oluşunuz için özenle seçilmiş içerikler
+            </p>
+          </div>
         </div>
 
-        <Tabs defaultValue="all" className="space-y-6">
-          <TabsList className="bg-muted">
-            <TabsTrigger value="all">Tümü</TabsTrigger>
-            <TabsTrigger value="articles">Makaleler</TabsTrigger>
-            <TabsTrigger value="videos">Videolar</TabsTrigger>
-            <TabsTrigger value="workshops">Workshop & Webinar</TabsTrigger>
-          </TabsList>
+        {/* Content Type Filter */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          <Button
+            variant={selectedDimension === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedDimension('all')}
+            className={selectedDimension === 'all' ? 'bg-orange-600 hover:bg-orange-700' : ''}
+          >
+            Tümü ({content.length})
+          </Button>
+          {dimensions.map((dim) => (
+            <Button
+              key={dim.id}
+              variant={selectedDimension === dim.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedDimension(dim.id)}
+              className={selectedDimension === dim.id ? 'bg-orange-600 hover:bg-orange-700' : ''}
+            >
+              {dim.name_tr}
+            </Button>
+          ))}
+        </div>
 
-          <TabsContent value="all" className="space-y-4">
-            {content && content.length > 0 ? (
-              content.map(renderContentCard)
-            ) : (
-              <Card className="border-border bg-card">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">Henüz içerik eklenmemiş</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="articles" className="space-y-4">
-            {articles.length > 0 ? (
-              articles.map(renderContentCard)
-            ) : (
-              <Card className="border-border bg-card">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">Henüz makale eklenmemiş</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="videos" className="space-y-4">
-            {videos.length > 0 ? (
-              videos.map(renderContentCard)
-            ) : (
-              <Card className="border-border bg-card">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">Henüz video eklenmemiş</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-
-          <TabsContent value="workshops" className="space-y-4">
-            {workshops.length > 0 ? (
-              workshops.map(renderContentCard)
-            ) : (
-              <Card className="border-border bg-card">
-                <CardContent className="py-12 text-center">
-                  <p className="text-muted-foreground">Henüz workshop eklenmemiş</p>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
-        </Tabs>
-
-        {events && events.length > 0 && (
-          <div className="mt-12">
-            <h2 className="mb-6 text-2xl font-bold text-foreground">Yaklaşan Etkinlikler</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {events.slice(0, 3).map((event: any) => (
-                <Card key={event.id} className="border-border bg-card">
-                  <CardHeader>
-                    <CardTitle className="text-lg text-card-foreground">{event.title}</CardTitle>
-                    <CardDescription className="text-muted-foreground">
-                      {event.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span>Tarih:</span>
-                        <span className="text-foreground">
-                          {new Date(event.start_time).toLocaleDateString("tr-TR", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+        {/* Content Grid */}
+        {filteredContent.length > 0 ? (
+          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {filteredContent.map((item) => (
+              <Card key={item.id} className="border-border hover:shadow-lg transition-shadow flex flex-col">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="p-2 bg-orange-100 rounded-lg flex-shrink-0">
+                        {getContentTypeIcon(item.content_type)}
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span>Tip:</span>
-                        <Badge variant="outline" className="border-border text-foreground">
-                          {event.event_type === "physical" ? "Fiziksel" :
-                           event.event_type === "online" ? "Online" : "Hibrit"}
-                        </Badge>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg line-clamp-2">
+                          {item.title}
+                        </CardTitle>
                       </div>
-                      {event.wellbeing_dimensions && (
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <span>Boyut:</span>
-                          <Badge className="bg-accent text-accent-foreground">
-                            {event.wellbeing_dimensions.name_tr}
-                          </Badge>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <div className="mt-6 text-center">
-              <Button asChild variant="outline" className="border-border">
-                <Link href="/employee/events">
-                  Tüm Etkinlikleri Gör
-                </Link>
-              </Button>
-            </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <Badge variant="outline" className="text-xs">
+                      {getContentTypeLabel(item.content_type)}
+                    </Badge>
+                    {item.wellbeing_dimensions && (
+                      <Badge variant="outline" className="text-xs border-orange-400 text-orange-700">
+                        {item.wellbeing_dimensions.name_tr}
+                      </Badge>
+                    )}
+                    {item.duration_minutes && (
+                      <Badge variant="outline" className="text-xs flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {item.duration_minutes} dk
+                      </Badge>
+                    )}
+                    {item.is_premium && (
+                      <Badge variant="outline" className="text-xs bg-orange-50 border-orange-400 text-orange-700">
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col">
+                  <p className="text-sm text-muted-foreground line-clamp-3 flex-1">
+                    {item.description}
+                  </p>
+                  
+                  <div className="flex gap-2 mt-4">
+                    {item.content_url ? (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        asChild
+                      >
+                        <a href={item.content_url} target="_blank" rel="noopener noreferrer">
+                          <Play className="mr-2 h-3 w-3" />
+                          İzle/Oku
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="flex-1 bg-orange-600 hover:bg-orange-700"
+                        disabled
+                      >
+                        Yakında
+                      </Button>
+                    )}
+                    <Button variant="outline" size="sm">
+                      <Bookmark className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+        ) : (
+          <Card className="border-border">
+            <CardContent className="py-12">
+              <div className="text-center text-muted-foreground">
+                <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p className="text-lg font-medium">Henüz içerik yok</p>
+                <p className="text-sm mt-2">
+                  {selectedDimension === 'all'
+                    ? 'Kütüphanede henüz içerik eklenmemiş'
+                    : 'Bu kategori için henüz içerik yok'}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

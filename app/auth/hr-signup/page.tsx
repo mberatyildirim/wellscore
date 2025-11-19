@@ -29,6 +29,7 @@ export default function HRSignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [department, setDepartment] = useState("");
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +111,7 @@ export default function HRSignupPage() {
           role: 'hr_admin',
           full_name: fullName,
           email,
+          department: department || null,
           is_active: true,
         });
 
@@ -260,6 +262,21 @@ export default function HRSignupPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="department" className="text-gray-700">Departman (Opsiyonel)</Label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="department"
+                      className="pl-9 text-gray-900"
+                      placeholder="İnsan Kaynakları"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
                       disabled={isLoading}
                     />
                   </div>

@@ -66,9 +66,9 @@ function Hero() {
           </div>
           <div className="flex flex-row gap-3">
             <Button size="lg" className="gap-4 bg-orange-600 hover:bg-orange-700 text-white" asChild>
-              <Link href="/auth/login">
+              <a href="mailto:info@wellscore.co?subject=Demo Talep Ediyorum&body=Merhaba,%0D%0A%0D%0AWellScore platformu hakkında demo talep etmek istiyorum.%0D%0A%0D%0AŞirket Adı:%0D%0AYetkili Kişi:%0D%0ATelefon:%0D%0A%0D%0ATeşekkürler.">
                 Demo talep edin <PhoneCall className="w-4 h-4" />
-              </Link>
+              </a>
             </Button>
           </div>
         </div>

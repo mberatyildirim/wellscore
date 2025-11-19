@@ -73,12 +73,13 @@ export default async function EmployeesPage() {
               </p>
             </div>
           </div>
-          <Button asChild size="sm" className="w-full sm:w-auto">
+          {/* Çalışan Ekle butonu yorum satırına alındı - erişim kapatıldı */}
+          {/* <Button asChild size="sm" className="w-full sm:w-auto">
             <Link href="/hr/invite">
               <UserPlus className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="text-xs sm:text-sm">Yeni Çalışan Ekle</span>
             </Link>
-          </Button>
+          </Button> */}
         </div>
 
         {/* Stats Cards */}
@@ -182,18 +183,10 @@ export default async function EmployeesPage() {
                     {/* Right Section - Status & Date */}
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 w-full sm:w-auto">
                       {employee.hasCompletedSurvey ? (
-                        <div className="flex items-center gap-3">
-                          <div className="text-right">
-                            <div className="text-xl sm:text-2xl font-bold text-primary">
-                              {employee.latestResponse?.overall_score?.toFixed(1) || 'N/A'}
-                            </div>
-                            <div className="text-xs text-muted-foreground">WellScore</div>
-                          </div>
-                          <Badge variant="outline" className="text-green-600 border-green-600 text-xs whitespace-nowrap">
-                            <CheckCircle className="mr-1 h-3 w-3" />
-                            Tamamlandı
-                          </Badge>
-                        </div>
+                        <Badge variant="outline" className="text-green-600 border-green-600 text-xs whitespace-nowrap">
+                          <CheckCircle className="mr-1 h-3 w-3" />
+                          Anket Tamamlandı
+                        </Badge>
                       ) : (
                         <Badge variant="outline" className="text-orange-600 border-orange-600 text-xs whitespace-nowrap">
                           Anket Bekleniyor
@@ -215,12 +208,13 @@ export default async function EmployeesPage() {
                 <UserPlus className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p className="text-lg font-medium mb-2">Henüz çalışan eklenmemiş</p>
                 <p className="text-sm mb-4">Hemen çalışan eklemeye başlayın!</p>
-                <Button asChild>
+                {/* Çalışan Ekle butonu yorum satırına alındı - erişim kapatıldı */}
+                {/* <Button asChild>
                   <Link href="/hr/invite">
                     <UserPlus className="mr-2 h-4 w-4" />
                     İlk Çalışanı Ekle
                   </Link>
-                </Button>
+                </Button> */}
               </div>
             )}
           </CardContent>

@@ -81,9 +81,9 @@ export default async function EmployeeDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {['Fiziksel', 'Zihinsel', 'Duygusal', 'Sosyal', 'Kariyer', 'Finansal', 'Çevresel', 'Amaç'].map((dim) => (
-                  <div key={dim} className="flex flex-col items-center p-3 rounded-lg bg-background border border-border">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {['Fiziksel', 'Sosyal', 'Entelektüel', 'Duygusal/Zihinsel', 'Mesleki', 'Çevresel', 'Finansal', 'Ruhsal'].map((dim) => (
+                  <div key={dim} className="flex flex-col items-center p-2.5 rounded-lg bg-background border border-border">
                     <span className="text-2xl mb-1">✓</span>
                     <span className="text-xs text-center text-muted-foreground">{dim}</span>
                   </div>
@@ -93,8 +93,8 @@ export default async function EmployeeDashboardPage() {
               <div className="bg-accent/30 rounded-lg p-4 space-y-2">
                 <h4 className="font-semibold text-sm">Bu değerlendirme:</h4>
                 <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• 40 soru (8 boyut x 5 soru)</li>
-                  <li>• Yaklaşık 10 dakika</li>
+                  <li>• 50 soru (8 wellbeing boyutu)</li>
+                  <li>• Yaklaşık 12-15 dakika</li>
                   <li>• Tamamen gizli ve anonim</li>
                   <li>• Kişiselleştirilmiş öneriler</li>
                 </ul>

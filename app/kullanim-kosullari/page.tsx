@@ -200,7 +200,7 @@ export default function TermsPage() {
                     Bu Kullanım Koşulları hakkında sorularınız varsa, lütfen bizimle iletişime geçin:
                   </p>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong className="text-gray-900">E-posta:</strong> legal@wellscore.com</p>
+                    <p><strong className="text-gray-900">E-posta:</strong> legal@wellscore.co</p>
                     <p><strong className="text-gray-900">Adres:</strong> [Şirket Adresi]</p>
                     <p><strong className="text-gray-900">Telefon:</strong> [İletişim Numarası]</p>
                   </div>

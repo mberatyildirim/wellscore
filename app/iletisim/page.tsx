@@ -97,8 +97,8 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">E-posta</h3>
-                        <p className="text-muted-foreground">info@wellscore.com</p>
-                        <p className="text-muted-foreground">support@wellscore.com</p>
+                        <p className="text-muted-foreground">info@wellscore.co</p>
+                        <p className="text-muted-foreground">support@wellscore.co</p>
                       </div>
                     </div>
 

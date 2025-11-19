@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
-import { Users, TrendingUp, AlertTriangle, CheckCircle, Activity, Building2, UserPlus, Download, BarChart3, ArrowRight, Target } from "lucide-react";
+import { Users, TrendingUp, AlertTriangle, CheckCircle, Activity, Building2, UserPlus, Download, BarChart3, ArrowRight, Target, Heart, Calendar } from "lucide-react";
 
 // Score category helper
 const getScoreCategory = (score: number) => {
@@ -128,12 +128,13 @@ export default async function HRDashboardPage() {
                 Çalışanlar
               </Link>
             </Button>
-            <Button asChild size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
+            {/* Çalışan Ekle butonu yorum satırına alındı - erişim kapatıldı */}
+            {/* <Button asChild size="sm" className="flex-1 sm:flex-none text-xs sm:text-sm">
               <Link href="/hr/invite">
                 <UserPlus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 Çalışan Ekle
               </Link>
-            </Button>
+            </Button> */}
           </div>
         </div>
 
@@ -203,26 +204,6 @@ export default async function HRDashboardPage() {
               <Badge variant="outline" className={`mt-2 ${scoreCategory.color}`}>
                 {scoreCategory.label}
               </Badge>
-            </CardContent>
-          </Card>
-
-          {/* At-Risk Employees */}
-          <Card className="border-orange-200 bg-orange-50">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Dikkat Gereken
-                </CardTitle>
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-              </div>
-                </CardHeader>
-                <CardContent>
-              <div className="text-3xl font-bold text-orange-600">{atRiskCount}</div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {atRiskCount > 0 
-                  ? "Düşük skor (<3.0)" 
-                  : "Harika! Herkes iyi durumda ✓"}
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -388,12 +369,13 @@ export default async function HRDashboardPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button asChild className="w-full">
+              {/* Çalışan Ekle butonu yorum satırına alındı - erişim kapatıldı */}
+              {/* <Button asChild className="w-full">
                 <Link href="/hr/invite">
                   Davet Gönder
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
-              </Button>
+              </Button> */}
             </CardContent>
           </Card>
 
@@ -436,6 +418,46 @@ export default async function HRDashboardPage() {
               </Button>
                   </CardContent>
                 </Card>
+
+          <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-white">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-orange-600" />
+                Wellbeing Day
+              </CardTitle>
+              <CardDescription>
+                Şirket geneli iyi oluş günü
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full border-orange-600 text-orange-600 hover:bg-orange-50">
+                <Link href="/hr/wellbeing-day">
+                  Etkinliklere Git
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-primary" />
+                Planlarım
+              </CardTitle>
+              <CardDescription>
+                Etkinlik planlarınız
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/hr/plans">
+                  Planlara Git
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
             </div>
       </div>
     </div>

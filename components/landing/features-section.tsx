@@ -5,7 +5,7 @@ const features = [
   {
     icon: Activity,
     title: "8 İyi Oluş Boyutu",
-    description: "Fiziksel, Duygusal, Zihinsel, Sosyal, Amaç, Finansal, Çevresel ve Mesleki iyi oluş boyutlarında kapsamlı ölçüm.",
+    description: "Fiziksel, Sosyal, Entelektüel, Duygusal ve Zihinsel, Mesleki, Çevresel, Finansal ve Ruhsal/Manevi iyi oluş boyutlarında kapsamlı ölçüm.",
   },
   {
     icon: Brain,
@@ -26,11 +26,6 @@ const features = [
     icon: Users,
     title: "Çalışan Katılımı",
     description: "Katılımı artırmak için interaktif iyi oluş kütüphanesi, etkinlik takvimi ve kişiselleştirilmiş içerik atamaları.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Kanıtlanmış ROI",
-    description: "Trend analizi ile zaman içindeki gelişimi takip edin ve iyi oluş girişimlerinin iş etkisini gösterin.",
   },
   {
     icon: Heart,
@@ -60,11 +55,12 @@ export function FeaturesSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, idx) => {
+        {/* İlk 4 kart - Tam genişlik */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          {features.slice(0, 4).map((feature, idx) => {
             const Icon = feature.icon;
             return (
-              <Card key={idx} className="border-border hover:border-primary/30 transition-colors">
+              <Card key={idx} className="border-border hover:border-primary/30 transition-colors w-full">
                 <CardContent className="pt-6">
                   <div className="rounded-lg bg-orange-50 w-12 h-12 flex items-center justify-center mb-4">
                     <Icon className="w-6 h-6 text-orange-600" />
@@ -77,6 +73,28 @@ export function FeaturesSection() {
               </Card>
             );
           })}
+        </div>
+
+        {/* Son 3 kart - Ortalanmış */}
+        <div className="flex justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl">
+            {features.slice(4).map((feature, idx) => {
+              const Icon = feature.icon;
+              return (
+                <Card key={idx + 4} className="border-border hover:border-primary/30 transition-colors w-full">
+                  <CardContent className="pt-6">
+                    <div className="rounded-lg bg-orange-50 w-12 h-12 flex items-center justify-center mb-4">
+                      <Icon className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <h3 className="font-semibold text-lg mb-2 text-black">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
