@@ -357,28 +357,8 @@ export default async function HRDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3">
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-primary" />
-                Çalışan Davet Et
-              </CardTitle>
-              <CardDescription>
-                Tek tek veya toplu CSV ile ekleyin
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Çalışan Ekle butonu yorum satırına alındı - erişim kapatıldı */}
-              {/* <Button asChild className="w-full">
-                <Link href="/hr/invite">
-                  Davet Gönder
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button> */}
-            </CardContent>
-          </Card>
-
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2">
+          {/* Çalışan Davet Et card'ı kaldırıldı */}
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

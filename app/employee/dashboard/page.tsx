@@ -157,11 +157,7 @@ export default async function EmployeeDashboardPage() {
               })}
             </p>
           </div>
-          <Button asChild variant="outline" size="sm" className="w-full sm:w-auto text-xs sm:text-sm">
-            <Link href="/employee/survey">
-              Yeni Değerlendirme
-            </Link>
-          </Button>
+
         </div>
 
         {/* Overall Score Hero Card */}
@@ -233,7 +229,8 @@ export default async function EmployeeDashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+
           <Card className="border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -275,22 +272,24 @@ export default async function EmployeeDashboardPage() {
           </Card>
 
           <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
-              <CardHeader>
+            <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
                 Kişisel Öneriler
               </CardTitle>
               <CardDescription>
                 AI destekli gelişim önerileri
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-              <Button className="w-full">
-                Önerileri Gör
-                <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-              </CardContent>
-            </Card>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/employee/recommendations">
+                  Önerileri Gör
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

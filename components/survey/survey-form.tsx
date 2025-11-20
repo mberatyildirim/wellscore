@@ -1,9 +1,10 @@
 "use client";
 
 // Survey form component for Wellscore assessment
-// Displays 40 questions one by one with auto-advance on answer selection
+// Displays 50 questions one by one with auto-advance on answer selection
 // Uses emoji-based Likert scale (1-5) for responses
-import { useState } from "react";
+// Enhanced with smooth animations, better state management, and improved UX
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { WellbeingDimension, SurveyQuestion } from "@/lib/types/database";
 import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, CheckCircle2 } from "lucide-react";
 
 // Props interface for the survey form component
 interface SurveyFormProps {
@@ -34,7 +35,7 @@ const EMOJI_SCALE = [
 
 export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
   const router = useRouter();
-  // Current question index (0 to 39 for 40 questions)
+  // Current question index (0 to 49 for 50 questions)
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   // Store all answers as a map of questionId -> score
   const [answers, setAnswers] = useState<Record<string, number>>({});
@@ -42,6 +43,12 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Error state for displaying errors
   const [error, setError] = useState<string | null>(null);
+  // Animation state for smooth transitions
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Track if answer was just selected (for visual feedback)
+  const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
+  // State to prevent double-clicks (using state instead of ref for better reactivity)
+  const [isProcessing, setIsProcessing] = useState(false);
 
   // Get the current question being displayed
   const currentQuestion = questions[currentQuestionIndex];
@@ -57,18 +64,50 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
   // Check if all questions have been answered
   const allQuestionsAnswered = Object.keys(answers).length === questions.length;
 
-  // Handle answer selection and auto-advance to next question
-  const handleAnswerChange = (questionId: string, score: number) => {
-    // Save the answer
-    setAnswers((prev) => ({ ...prev, [questionId]: score }));
+  // Reset transition state when question changes
+  useEffect(() => {
+    setIsTransitioning(false);
+    setSelectedAnswer(null);
+    // Reset processing flag when question changes
+    setIsProcessing(false);
+  }, [currentQuestionIndex]);
+
+  // Handle answer selection with improved state management
+  const handleAnswerChange = useCallback((questionId: string, score: number) => {
+    // Prevent double-clicks and rapid clicks
+    if (isProcessing) return;
     
-    // Auto-advance to next question after a short delay for UX
-    setTimeout(() => {
-      if (currentQuestionIndex < questions.length - 1) {
-        setCurrentQuestionIndex((prev) => prev + 1);
+    setIsProcessing(true);
+    setSelectedAnswer(score);
+    
+    // Immediately save the answer to state
+    setAnswers((prev) => {
+      const newAnswers = { ...prev, [questionId]: score };
+      return newAnswers;
+    });
+
+    // Check if this is the last question
+    const isLastQuestion = currentQuestionIndex === questions.length - 1;
+    
+    if (isLastQuestion) {
+      // If last question, don't transition - just reset states and show submit button
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setIsProcessing(false);
+        setSelectedAnswer(null);
+      }, 300); // Short delay for visual feedback
+    } else {
+      // Start transition animation for non-last questions
+      setIsTransitioning(true);
+      
+      // Auto-advance to next question after animation delay
+      setTimeout(() => {
+        if (currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex((prev) => prev + 1);
+        }
+      }, 400); // Slightly longer delay for better UX
     }
-    }, 300);
-  };
+  }, [currentQuestionIndex, questions.length, isProcessing]);
 
   // Navigate to previous question
   const handlePrevious = () => {
@@ -174,81 +213,121 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
 
   return (
     <div className="space-y-4 md:space-y-6">
-      {/* Progress Bar - Always visible */}
-      <div className="space-y-2">
-        <Progress value={progress} className="h-2" />
+      {/* Enhanced Progress Bar with answered count */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between text-xs md:text-sm text-muted-foreground mb-1">
+          <span className="font-medium">İlerleme</span>
+          <span className="font-semibold text-orange-600">
+            {Object.keys(answers).length} / {questions.length} cevaplandı
+          </span>
+        </div>
+        <Progress 
+          value={progress} 
+          className="h-3 bg-gray-100"
+        />
         <div className="flex items-center justify-center text-xs md:text-sm text-muted-foreground">
-          <span>Soru {currentQuestionIndex + 1} / {questions.length}</span>
+          <span className="font-medium">Soru {currentQuestionIndex + 1} / {questions.length}</span>
         </div>
       </div>
 
-      {/* Single Question Card */}
-      <Card className="border-border bg-card">
-        <CardHeader className="pb-4">
-          <div className="flex items-start gap-4">
-            {/* Rotated Logo for Dimension - rotation changes per dimension */}
-            <div className="flex-shrink-0">
-              <Image 
-                src="/logo-variant.svg" 
-                alt="Dimension Icon" 
-                width={48} 
-                height={48}
-                className="w-10 h-10 md:w-12 md:h-12"
-                style={{ transform: `rotate(${rotationAngle}deg)` }}
-              />
-            </div>
-            
-            <div className="flex-1">
-              {/* Dimension name - hidden on mobile */}
-              <div className="hidden md:block">
-                <CardTitle className="text-lg md:text-xl text-orange-600">
-                  {currentDimension?.name_tr}
-          </CardTitle>
-                <CardDescription className="text-muted-foreground text-sm mt-1">
-                  {currentDimension?.description}
-          </CardDescription>
+      {/* Single Question Card with smooth transitions */}
+      <div 
+        className={`transition-all duration-300 ${
+          isTransitioning ? 'opacity-0 translate-x-4' : 'opacity-100 translate-x-0'
+        }`}
+      >
+        <Card className="border-2 border-orange-200 bg-card shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="pb-4">
+            <div className="flex items-start gap-4">
+              {/* Rotated Logo for Dimension with smooth rotation */}
+              <div className="flex-shrink-0">
+                <div 
+                  className="transition-transform duration-500 ease-in-out"
+                  style={{ transform: `rotate(${rotationAngle}deg)` }}
+                >
+                  <Image 
+                    src="/logo-variant.svg" 
+                    alt="Dimension Icon" 
+                    width={56} 
+                    height={56}
+                    className="w-12 h-12 md:w-14 md:h-14"
+                  />
+                </div>
               </div>
               
-              {/* Only show dimension name on mobile, no description */}
-              <div className="block md:hidden">
-                <CardTitle className="text-base text-orange-600">
-                  {currentDimension?.name_tr}
-                </CardTitle>
+              <div className="flex-1">
+                {/* Dimension name - hidden on mobile */}
+                <div className="hidden md:block">
+                  <CardTitle className="text-xl md:text-2xl text-orange-600 font-bold">
+                    {currentDimension?.name_tr}
+                  </CardTitle>
+                  <CardDescription className="text-muted-foreground text-sm mt-2">
+                    {currentDimension?.description}
+                  </CardDescription>
+                </div>
+                
+                {/* Only show dimension name on mobile, no description */}
+                <div className="block md:hidden">
+                  <CardTitle className="text-lg text-orange-600 font-bold">
+                    {currentDimension?.name_tr}
+                  </CardTitle>
+                </div>
               </div>
             </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="space-y-6">
-          {/* Question Text */}
-          <div className="bg-orange-50 rounded-lg p-4 md:p-6">
-            <p className="font-semibold text-base md:text-lg text-card-foreground text-center">
-              {currentQuestion?.question_text_tr}
+          </CardHeader>
+          
+          <CardContent className="space-y-6">
+            {/* Question Text with enhanced styling */}
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-5 md:p-7 border border-orange-200 shadow-sm">
+              <p className="font-semibold text-base md:text-xl text-gray-900 text-center leading-relaxed">
+                {currentQuestion?.question_text_tr}
               </p>
-          </div>
+            </div>
 
-          {/* Answer Options - Horizontal layout with emoji + text */}
-          <div className="flex flex-col gap-2 md:gap-3">
-                {EMOJI_SCALE.map((option) => (
+            {/* Answer Options - Enhanced with better animations and feedback */}
+            <div className="flex flex-col gap-3 md:gap-4">
+              {EMOJI_SCALE.map((option) => {
+                const isSelected = answers[currentQuestion.id] === option.value;
+                const isJustSelected = selectedAnswer === option.value && isSelected;
+                
+                return (
                   <button
                     key={option.value}
                     type="button"
-                onClick={() => handleAnswerChange(currentQuestion.id, option.value)}
-                className={`flex items-center gap-3 md:gap-4 rounded-lg border-2 px-4 py-2.5 md:py-3 transition-all hover:scale-[1.02] active:scale-95 ${
-                  answers[currentQuestion.id] === option.value
-                    ? "border-orange-600 bg-orange-50 shadow-md"
-                    : "border-border bg-background hover:border-orange-300"
-                    }`}
+                    onClick={() => handleAnswerChange(currentQuestion.id, option.value)}
+                    disabled={isProcessing}
+                    className={`
+                      flex items-center gap-4 rounded-xl border-2 px-5 py-4 md:py-5 
+                      transition-all duration-200 ease-in-out
+                      transform
+                      ${isSelected 
+                        ? "border-orange-600 bg-gradient-to-r from-orange-50 to-orange-100 shadow-lg scale-[1.02] ring-2 ring-orange-200" 
+                        : "border-gray-200 bg-white hover:border-orange-400 hover:bg-orange-50 hover:shadow-md hover:scale-[1.01]"
+                      }
+                      ${isJustSelected ? "animate-pulse" : ""}
+                      active:scale-95
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
                   >
-                <span className="text-2xl md:text-3xl flex-shrink-0">{option.emoji}</span>
-                <span className="text-sm md:text-base text-left text-muted-foreground font-medium flex-1">
+                    <span className="text-3xl md:text-4xl flex-shrink-0 transition-transform duration-200">
+                      {option.emoji}
+                    </span>
+                    <span className={`
+                      text-sm md:text-base text-left font-medium flex-1
+                      ${isSelected ? "text-orange-900" : "text-gray-700"}
+                    `}>
                       {option.label}
                     </span>
+                    {isSelected && (
+                      <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-orange-600 flex-shrink-0 animate-in fade-in zoom-in duration-200" />
+                    )}
                   </button>
-                ))}
-              </div>
-        </CardContent>
-      </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Error Display */}
       {error && (
@@ -259,30 +338,50 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
         </Card>
       )}
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between gap-3">
+      {/* Navigation Buttons - Enhanced */}
+      <div className="flex items-center justify-between gap-3 pt-2">
         {/* Previous Button - Always visible but disabled on first question */}
         <Button
           variant="outline"
           onClick={handlePrevious}
-          disabled={currentQuestionIndex === 0}
-          className="border-border text-foreground text-xs md:text-base px-3 md:px-4 py-2 md:py-2.5"
+          disabled={currentQuestionIndex === 0 || isProcessing}
+          className="border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 text-xs md:text-base px-4 md:px-6 py-2.5 md:py-3 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           size="sm"
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
           Önceki
         </Button>
 
-        {/* Submit Button - Only show on last question if all answered */}
-        {currentQuestionIndex === questions.length - 1 && allQuestionsAnswered && (
+        {/* Submit Button - Show on last question when all answered */}
+        {currentQuestionIndex === questions.length - 1 && allQuestionsAnswered && !isTransitioning && (
           <Button
             onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="bg-orange-600 text-white hover:bg-orange-700 text-xs md:text-base px-4 md:px-6 py-2 md:py-2.5"
+            disabled={isSubmitting || isProcessing}
+            className="bg-gradient-to-r from-orange-600 to-orange-700 text-white hover:from-orange-700 hover:to-orange-800 shadow-lg hover:shadow-xl text-xs md:text-base px-6 md:px-8 py-2.5 md:py-3 font-semibold transition-all transform hover:scale-105 active:scale-95 animate-in fade-in slide-in-from-right duration-300"
             size="sm"
           >
-            {isSubmitting ? "Gönderiliyor..." : "Anketi Tamamla"}
+            {isSubmitting ? (
+              <>
+                <span className="animate-spin mr-2">⏳</span>
+                Gönderiliyor...
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Anketi Tamamla
+              </>
+            )}
           </Button>
+        )}
+        
+        {/* Show completion status if on last question but not all answered */}
+        {currentQuestionIndex === questions.length - 1 && !allQuestionsAnswered && !isTransitioning && (
+          <div className="text-xs md:text-sm text-muted-foreground text-right animate-in fade-in slide-in-from-right duration-300">
+            <p className="font-medium">Tüm soruları cevaplayın</p>
+            <p className="text-orange-600 font-semibold">
+              {questions.length - Object.keys(answers).length} soru kaldı
+            </p>
+          </div>
         )}
       </div>
     </div>
