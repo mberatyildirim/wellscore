@@ -193,7 +193,7 @@ export default function HRActionsPage() {
   };
 
   // Handle adding event to plan
-  const handleAddToPlan = async (eventId: string) => {
+  const handleAddToPlan = async (eventId: string, closeModal: boolean = false) => {
     setAddingToPlan(prev => ({ ...prev, [eventId]: true }));
     
     try {
@@ -212,6 +212,11 @@ export default function HRActionsPage() {
       toast.success('✅ Etkinlik planlarınıza eklendi!');
       // Add to plannedEventIds
       setPlannedEventIds(prev => new Set([...prev, eventId]));
+      
+      // Close modal only if requested and after success
+      if (closeModal) {
+        setIsEventModalOpen(false);
+      }
     } catch (error: any) {
       console.error('[Add to Plan Error]:', error);
       toast.error(error.message || 'Plana eklenirken hata oluştu');
@@ -702,7 +707,7 @@ export default function HRActionsPage() {
 
         {/* Event Detail Modal */}
         <Dialog open={isEventModalOpen} onOpenChange={setIsEventModalOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto [&>button]:text-gray-900 [&>button]:hover:text-gray-700">
             {selectedEvent && (
               <>
                 <DialogHeader>
@@ -780,10 +785,7 @@ export default function HRActionsPage() {
                         </Button>
                       ) : (
                         <Button
-                          onClick={() => {
-                            handleAddToPlan(selectedEvent.id);
-                            setIsEventModalOpen(false);
-                          }}
+                          onClick={() => handleAddToPlan(selectedEvent.id, true)}
                           disabled={addingToPlan[selectedEvent.id]}
                           className="w-full sm:flex-1 bg-orange-600 hover:bg-orange-700 text-white text-sm sm:text-base"
                         >
