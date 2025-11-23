@@ -335,7 +335,7 @@ function SurveyCompletePageContent() {
           </p>
         </div>
 
-        {/* Completion State */}
+        {/* Completion State or Event Card */}
         {isCompleting ? (
           <div className="relative h-[600px] sm:h-[700px] flex items-center justify-center">
             <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white shadow-2xl max-w-md w-full">
@@ -458,7 +458,7 @@ function SurveyCompletePageContent() {
               </Card>
             </div>
           </div>
-        )}
+        ) : null}
 
         {/* Skip Button - Only show if not completing */}
         {!isCompleting && (
