@@ -237,12 +237,20 @@ function SurveyCompletePageContent() {
               {recommendations.wellbeing_tips && Object.keys(recommendations.wellbeing_tips).length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-semibold text-gray-900">Öne Çıkan Öneriler:</p>
-                  {Object.entries(recommendations.wellbeing_tips).slice(0, 3).map(([dimension, tips]) => (
-                    <div key={dimension} className="bg-white rounded-lg p-3 border border-orange-100">
-                      <p className="text-xs font-medium text-orange-900 mb-1">{dimension}</p>
-                      <p className="text-xs text-gray-700">{tips[0]}</p>
-                    </div>
-                  ))}
+                  {Object.entries(recommendations.wellbeing_tips).slice(0, 3).map(([dimension, tipData]) => {
+                    // Handle both old format (array) and new format (object)
+                    const isNewFormat = tipData && typeof tipData === 'object' && !Array.isArray(tipData) && 'strength_insight' in tipData;
+                    const displayText = isNewFormat 
+                      ? (tipData as { strength_insight: string; optional_suggestion: string }).strength_insight
+                      : Array.isArray(tipData) ? tipData[0] : '';
+                    
+                    return (
+                      <div key={dimension} className="bg-white rounded-lg p-3 border border-orange-100">
+                        <p className="text-xs font-medium text-orange-900 mb-1">{dimension}</p>
+                        <p className="text-xs text-gray-700">{displayText}</p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

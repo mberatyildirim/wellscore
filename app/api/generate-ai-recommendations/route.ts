@@ -4,13 +4,21 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 export async function POST(req: Request) {
   try {
+    // Check for API key (lazy initialization to avoid build errors)
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json(
+        { error: "OpenAI API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    // Initialize OpenAI client (only when needed, not at module level)
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     const supabase = await createClient();
     const { responseId } = await req.json();
 
@@ -48,6 +56,24 @@ export async function POST(req: Request) {
       `)
       .eq("response_id", responseId);
 
+    // Get survey answers (per-question Likert answers 1-5)
+    const { data: surveyAnswers } = await supabase
+      .from("survey_answers")
+      .select(`
+        answer_value,
+        survey_questions (
+          id,
+          question_text_tr,
+          dimension_id
+        ),
+        wellbeing_dimensions (
+          id,
+          name_tr
+        )
+      `)
+      .eq("response_id", responseId)
+      .order("survey_questions(order_index)", { ascending: true });
+
     // Get all available events
     const { data: allEvents } = await supabase
       .from("events")
@@ -64,12 +90,26 @@ export async function POST(req: Request) {
       `)
       .order("created_at", { ascending: false });
 
-    // Prepare dimension scores summary
+    // Prepare dimension scores summary (convert 0-5 to 0-100 for prompt)
     const dimensionSummary = dimensionScores?.map((ds: any) => ({
       dimension: ds.wellbeing_dimensions?.name_tr,
       score: ds.score,
+      score_0_100: (ds.score / 5) * 100, // Convert to 0-100 scale
       description: ds.wellbeing_dimensions?.description,
     })) || [];
+
+    // Prepare survey answers grouped by dimension
+    const answersByDimension: Record<string, Array<{ question: string; answer: number }>> = {};
+    surveyAnswers?.forEach((answer: any) => {
+      const dimensionName = answer.wellbeing_dimensions?.name_tr || "Genel";
+      if (!answersByDimension[dimensionName]) {
+        answersByDimension[dimensionName] = [];
+      }
+      answersByDimension[dimensionName].push({
+        question: answer.survey_questions?.question_text_tr || "",
+        answer: answer.answer_value,
+      });
+    });
 
     // Identify improvement areas (scores < 3.5)
     const improvementAreas = dimensionSummary
@@ -89,15 +129,54 @@ export async function POST(req: Request) {
     console.log("📋 [AI API] Total events to send:", eventsList.length);
     console.log("📋 [AI API] Events list:", JSON.stringify(eventsList.slice(0, 5), null, 2), "... (showing first 5)");
 
-    // Create AI prompt in Turkish with better event formatting
-    const prompt = `Sen bir wellbeing (iyi oluş) uzmanısın. Bir çalışanın WellScore anket sonuçlarını analiz edip kişiselleştirilmiş öneriler sunacaksın.
+    // Create AI prompt in Turkish with new wellbeing tips format
+    const prompt = `Sen Wellscore Recommendation Engine'sin.
+
+Görevin, kullanıcının anket cevaplarına ve boyut skorlarına dayanarak destekleyici, gerçekçi ve tanı koymayan wellbeing önerileri üretmek.
+
+✅ KURALLAR & KISITLAR
+
+Tahmin etme, çıkarım yapma veya bilgi uydurma.
+– Kullanıcı açıkça belirtmedikçe semptom, ağrı, tükenmişlik, kaygı, yaralanma vb. asla bahsetme.
+
+Sadece sağlanan bilgileri kullan:
+– Boyut skorları (0–100)
+– Soru bazlı Likert cevapları (1–5)
+
+Ton, skor seviyesine uymalı:
+– 85–100: kutla + koru (iyileştirme baskısı yok)
+– 70–84: stabil + küçük opsiyonel iyileştirmeler
+– 50–69: destekleyici + 1 öncelikli öneri
+– 0–49: nazik + tek ulaşılabilir adım (alarm veren dil yok)
+
+Tıbbi, terapötik veya tanı koyucu dilden kaçın.
+– Tedavi yok, klinik iddia yok, varsayım yok.
+
+Önerileri küçük, uygulanabilir ve opsiyonel tut.
+– maksimum 1–2 mikro-aksiyon
+– seçenek sun, zorunluluk değil
+
+Olumsuz çerçeveleme yok.
+– güçlü yönlere, ilerlemeye, sürdürülebilirliğe odaklan
+
+Skorlama formülü veya iç mantığa asla referans verme.
+
+✅ ÖNERİ ÜRETME YÖNTEMİ
+
+Kullanıcının katıldığı ifadeleri (4–5) belirle → güçlendir ve koru.
+Nötr ifadeleri (3) belirle → nazik iyileştirme seçenekleri sun.
+Düşük skorları görmezden gel, boyut genelinde tutarlı değilse.
+Büyük müdahaleler yerine günlük/haftalık alışkanlıkları önceliklendir.
 
 KULLANICI BİLGİLERİ:
 - Genel WellScore: ${response.overall_score}/5.0
-- Boyut Skorları:
-${dimensionSummary.map((d: any) => `  • ${d.dimension}: ${d.score}/5.0`).join("\n")}
+- Boyut Skorları (0-100):
+${dimensionSummary.map((d: any) => `  • ${d.dimension}: ${d.score_0_100.toFixed(0)}/100 (${d.score}/5.0)`).join("\n")}
 
-${improvementAreas.length > 0 ? `\nİYİLEŞTİRME GEREKTİREN ALANLAR:\n${improvementAreas.map((a: string) => `  • ${a}`).join("\n")}` : ""}
+- Soru Bazlı Cevaplar (1-5 Likert):
+${Object.entries(answersByDimension).map(([dimension, answers]) => `
+${dimension}:
+${answers.map((a: any) => `  • "${a.question}": ${a.answer}/5`).join("\n")}`).join("\n")}
 
 MEVCUT ETKİNLİKLER (TOPLAM ${eventsList.length} ETKİNLİK):
 ${eventsList.map((e: any, index: number) => `${index + 1}. [ID: ${e.id}] ${e.title}
@@ -106,12 +185,10 @@ ${eventsList.map((e: any, index: number) => `${index + 1}. [ID: ${e.id}] ${e.tit
    - Konum: ${e.location || "Belirtilmemiş"}
    - Açıklama: ${e.description || "Açıklama yok"}`).join("\n\n")}
 
-ÖNEMLİ: Yukarıdaki etkinlik listesinden, kullanıcının düşük skorlu alanlarına ve genel wellbeing durumuna göre EN UYGUN 5-8 ETKİNLİĞİ SEÇMELİSİN. Her etkinlik için event_id'yi TAM OLARAK yukarıdaki listeden kopyala.
-
 GÖREVİN:
 1. YUKARIDAKİ ETKİNLİK LİSTESİNDEN, kullanıcının düşük skorlu alanlarına ve genel wellbeing durumuna göre EN UYGUN 5-8 ETKİNLİĞİ SEÇ. Her etkinlik için event_id'yi TAM OLARAK yukarıdaki listeden kopyala (örnek: "event_id": "550e8400-e29b-41d4-a716-446655440000").
 2. Her seçtiğin etkinlik için 2-3 cümlelik Türkçe bir gerekçe yaz (neden bu etkinlik öneriliyor).
-3. Genel wellbeing önerileri ver (her boyut için 2-3 kısa, uygulanabilir öneri).
+3. Her boyut için wellbeing önerileri ver (aşağıdaki formata göre).
 
 ÇIKTI FORMATI (JSON):
 {
@@ -122,16 +199,46 @@ GÖREVİN:
     }
   ],
   "wellbeing_tips": {
-    "Fiziksel Sağlık": ["Öneri 1", "Öneri 2"],
-    "Zihinsel/Duygusal Sağlık": ["Öneri 1", "Öneri 2"],
-    "Sosyal Sağlık": ["Öneri 1", "Öneri 2"],
-    "Mesleki Sağlık": ["Öneri 1", "Öneri 2"],
-    "Entelektüel Sağlık": ["Öneri 1", "Öneri 2"],
-    "Çevresel Sağlık": ["Öneri 1", "Öneri 2"],
-    "Finansal Sağlık": ["Öneri 1", "Öneri 2"],
-    "Ruhsal/Manevi Sağlık": ["Öneri 1", "Öneri 2"]
+    "Fiziksel Sağlık": {
+      "strength_insight": "Kısa bir onaylama - kullanıcının zaten iyi yaptığı şeylere dayanarak",
+      "optional_suggestion": "1 gerçekçi, opsiyonel mikro-aksiyon (varsayım yok)"
+    },
+    "Zihinsel/Duygusal Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Sosyal Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Mesleki Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Entelektüel Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Çevresel Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Finansal Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    },
+    "Ruhsal/Manevi Sağlık": {
+      "strength_insight": "...",
+      "optional_suggestion": "..."
+    }
   }
 }
+
+ÖNEMLİ: 
+- Her boyut için skor seviyesine göre ton kullan (85-100: kutla, 70-84: stabil, 50-69: destekleyici, 0-49: nazik).
+- Sadece kullanıcının açıkça belirttiği bilgileri kullan.
+- Tıbbi tavsiye, tanı veya uyarı dili kullanma.
+- Her öneriyi "İstersen bunu senin için hatırlatma olarak ekleyebilirim / seçenek sunabilirim." ile bitir.
 
 SADECE JSON DÖNDÜR, BAŞKA BİR ŞEY YAZMA.`;
 

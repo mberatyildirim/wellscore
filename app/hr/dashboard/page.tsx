@@ -193,8 +193,8 @@ export default async function HRDashboardPage() {
                 </CardTitle>
                 <TrendingUp className="h-5 w-5 text-muted-foreground" />
               </div>
-            </CardHeader>
-            <CardContent>
+                </CardHeader>
+                <CardContent>
               <div className="flex items-baseline gap-2">
                 <span className={`text-3xl font-bold ${scoreCategory.color}`}>
                   {companyAverageScore.toFixed(1)}
@@ -299,7 +299,7 @@ export default async function HRDashboardPage() {
                         <div className="flex items-baseline gap-2">
                           <span className={`text-4xl sm:text-5xl font-black ${textColor} tracking-tight`}>
                             {score.toFixed(1)}
-                          </span>
+                              </span>
                           <span className="text-xs sm:text-sm text-muted-foreground font-medium">/ 5.0</span>
                         </div>
                         

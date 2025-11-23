@@ -486,19 +486,45 @@ export default function AIRecommendationsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.entries(recommendations?.wellbeing_tips || {}).map(([dimension, tips]) => (
-                <div key={dimension} className="bg-white rounded-lg p-4 border border-orange-100">
-                  <h3 className="font-semibold text-gray-900 mb-2">{dimension}</h3>
-                  <ul className="space-y-1">
-                    {tips.map((tip: string, index: number) => (
-                      <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                        <span className="text-orange-600 mt-1">•</span>
-                        <span>{tip}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              {Object.entries(recommendations?.wellbeing_tips || {}).map(([dimension, tipData]) => {
+                // Handle both old format (array) and new format (object)
+                const isNewFormat = tipData && typeof tipData === 'object' && !Array.isArray(tipData) && 'strength_insight' in tipData;
+                
+                if (isNewFormat) {
+                  const tip = tipData as { strength_insight: string; optional_suggestion: string };
+                  return (
+                    <div key={dimension} className="bg-white rounded-lg p-4 border border-orange-100">
+                      <h3 className="font-semibold text-gray-900 mb-3">{dimension}</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-medium text-orange-900 mb-1">1) Güçlü Yön:</p>
+                          <p className="text-sm text-gray-700">{tip.strength_insight}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-orange-900 mb-1">2) Opsiyonel Küçük Öneri:</p>
+                          <p className="text-sm text-gray-700">{tip.optional_suggestion}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  // Old format (array of strings) - backward compatibility
+                  const tips = Array.isArray(tipData) ? tipData : [];
+                  return (
+                    <div key={dimension} className="bg-white rounded-lg p-4 border border-orange-100">
+                      <h3 className="font-semibold text-gray-900 mb-2">{dimension}</h3>
+                      <ul className="space-y-1">
+                        {tips.map((tip: string, index: number) => (
+                          <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                            <span className="text-orange-600 mt-1">•</span>
+                            <span>{tip}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                }
+              })}
             </CardContent>
           </Card>
         )}
