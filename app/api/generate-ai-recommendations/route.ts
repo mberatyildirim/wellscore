@@ -185,8 +185,10 @@ ${eventsList.map((e: any, index: number) => `${index + 1}. [ID: ${e.id}] ${e.tit
    - Konum: ${e.location || "Belirtilmemiş"}
    - Açıklama: ${e.description || "Açıklama yok"}`).join("\n\n")}
 
+ÖNEMLİ: SADECE YUKARIDAKİ ETKİNLİK LİSTESİNDEKİ ETKİNLİKLERİ ÖNEREBİLİRSİN. LİSTEDE OLMAYAN HİÇBİR ETKİNLİK ÖNERME. EĞER UYGUN ETKİNLİK YOKSA, O BOYUT İÇİN ETKİNLİK ÖNERME.
+
 GÖREVİN:
-1. YUKARIDAKİ ETKİNLİK LİSTESİNDEN, kullanıcının düşük skorlu alanlarına ve genel wellbeing durumuna göre EN UYGUN 5-8 ETKİNLİĞİ SEÇ. Her etkinlik için event_id'yi TAM OLARAK yukarıdaki listeden kopyala (örnek: "event_id": "550e8400-e29b-41d4-a716-446655440000").
+1. YUKARIDAKİ ETKİNLİK LİSTESİNDEN, kullanıcının düşük skorlu alanlarına ve genel wellbeing durumuna göre EN UYGUN 5-8 ETKİNLİĞİ SEÇ. SADECE LİSTEDE OLAN ETKİNLİKLERİ ÖNER. Her etkinlik için event_id'yi TAM OLARAK yukarıdaki listeden kopyala (örnek: "event_id": "550e8400-e29b-41d4-a716-446655440000").
 2. Her seçtiğin etkinlik için 2-3 cümlelik Türkçe bir gerekçe yaz (neden bu etkinlik öneriliyor).
 3. Her boyut için wellbeing önerileri ver (aşağıdaki formata göre).
 

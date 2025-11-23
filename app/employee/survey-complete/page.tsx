@@ -48,6 +48,7 @@ function SurveyCompletePageContent() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showEvents, setShowEvents] = useState(false); // Control which step to show
   const [isGeneratingAI, setIsGeneratingAI] = useState(false); // Track AI generation
+  const [isCompleting, setIsCompleting] = useState(false); // Track completion state
 
   useEffect(() => {
     async function loadData() {
@@ -142,13 +143,20 @@ function SurveyCompletePageContent() {
     setTimeout(() => {
       if (currentEventIndex < recommendedEventsWithDetails.length - 1) {
         setCurrentEventIndex(prev => prev + 1);
+        setIsSwiping(false);
+        setSwipeDirection(null);
+        setDragOffset({ x: 0, y: 0 });
       } else {
-        // All events swiped, go to recommendations page
-        router.push("/employee/ai-recommendations");
+        // All events swiped, show completion state then redirect
+        setIsCompleting(true);
+        setIsSwiping(false);
+        setSwipeDirection(null);
+        setDragOffset({ x: 0, y: 0 });
+        // Wait a bit for smooth transition, then redirect
+        setTimeout(() => {
+          router.push("/employee/ai-recommendations");
+        }, 800);
       }
-      setIsSwiping(false);
-      setSwipeDirection(null);
-      setDragOffset({ x: 0, y: 0 });
     }, 300);
   };
 
@@ -327,8 +335,29 @@ function SurveyCompletePageContent() {
           </p>
         </div>
 
-        {/* Swipeable Event Card */}
-        {currentEvent && (
+        {/* Completion State */}
+        {isCompleting ? (
+          <div className="relative h-[600px] sm:h-[700px] flex items-center justify-center">
+            <Card className="border-2 border-green-200 bg-gradient-to-br from-green-50 to-white shadow-2xl max-w-md w-full">
+              <CardContent className="p-8 sm:p-12 text-center space-y-6">
+                <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-12 w-12 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+                    Harika! 🎉
+                  </h2>
+                  <p className="text-gray-600">
+                    Tüm etkinlikleri incelediniz. Önerilerinize yönlendiriliyorsunuz...
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : currentEvent ? (
           <div className="relative h-[600px] sm:h-[700px] flex items-center justify-center">
             <div
               className={`absolute w-full max-w-md transition-transform duration-300 ${
@@ -431,16 +460,18 @@ function SurveyCompletePageContent() {
           </div>
         )}
 
-        {/* Skip Button */}
-        <div className="text-center">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/employee/ai-recommendations")}
-            className="text-gray-600 hover:text-gray-900"
-          >
-            Tümünü Gör <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+        {/* Skip Button - Only show if not completing */}
+        {!isCompleting && (
+          <div className="text-center">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/employee/ai-recommendations")}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Tümünü Gör <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

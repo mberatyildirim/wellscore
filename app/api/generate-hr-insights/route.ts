@@ -208,8 +208,8 @@ Her boyut için aşağıdaki formatta içgörü ve öneriler üret. Önerilerind
       "strength_area": "Korunması gereken olumlu bir organizasyonel örüntü",
       "development_area": "İyileştirme fırsatı içeren genel bir tema (neden belirtmeden)",
       "recommended_actions": [
-        "1 düşük eforlu aksiyon (etkinlik referansı ile)",
-        "1 iletişim / katılım önerisi (etkinlik referansı ile)",
+        "1 düşük eforlu aksiyon (etkinlik adını yaz, event_id YAZMA)",
+        "1 iletişim / katılım önerisi (etkinlik adını yaz, event_id YAZMA)",
         "1 isteğe bağlı tekrar ölçüm / takip"
       ],
       "referenced_events": ["event_id_1", "event_id_2"]

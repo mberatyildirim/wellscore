@@ -2,7 +2,7 @@
 
 // HR Actions & Events Management
 // Lists all available wellbeing events, shows demand analysis, and allows HR to take action
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,16 +17,18 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, Calendar, Users, TrendingDown, FileText, DollarSign, Mail, Sparkles, Loader2, X, MapPin } from "lucide-react";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from "sonner";
 
-export default function HRActionsPage() {
+function HRActionsPageContent() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [events, setEvents] = useState<any[]>([]);
   const [lowScoresByDimension, setLowScoresByDimension] = useState<Record<string, number>>({});
   const [requestsByEvent, setRequestsByEvent] = useState<Record<string, number>>({});
   const [addingToPlan, setAddingToPlan] = useState<Record<string, boolean>>({});
+  const searchParams = useSearchParams();
+  const dimensionFromQuery = searchParams.get('dimension');
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [dimensions, setDimensions] = useState<any[]>([]);
   const [plannedEventIds, setPlannedEventIds] = useState<Set<string>>(new Set());
@@ -72,6 +74,11 @@ export default function HRActionsPage() {
         .order("order_index", { ascending: true });
       
       setDimensions(dimensionsData || []);
+
+      // Set filter from query param if exists
+      if (dimensionFromQuery) {
+        setSelectedFilter(dimensionFromQuery);
+      }
 
       // Fetch all events
       const { data: eventsData } = await supabase
@@ -314,9 +321,24 @@ export default function HRActionsPage() {
             {hrInsights ? (
               <div className="space-y-6">
                 {Object.entries(hrInsights.insights || {}).map(([dimension, insight]: [string, any]) => {
-                  const referencedEvents = events.filter((e: any) => 
+                  // Filter by selected dimension if query param exists
+                  if (dimensionFromQuery && dimensionFromQuery !== 'all') {
+                    const selectedDim = dimensions.find(d => d.id === dimensionFromQuery);
+                    if (selectedDim && dimension !== selectedDim.name_tr) {
+                      return null; // Skip this dimension
+                    }
+                  }
+                  
+                  // Get referenced events (include Fitty if special events should be shown)
+                  let referencedEvents = events.filter((e: any) => 
                     insight.referenced_events?.includes(e.id)
                   );
+                  
+                  // Always include Fitty (special event with null dimension_id)
+                  const fittyEvent = events.find((e: any) => e.dimension_id === null);
+                  if (fittyEvent && !referencedEvents.find((e: any) => e.id === fittyEvent.id)) {
+                    referencedEvents = [fittyEvent, ...referencedEvents];
+                  }
                   
                   return (
                     <div key={dimension} className="bg-white rounded-lg p-6 border border-orange-100">
@@ -354,12 +376,16 @@ export default function HRActionsPage() {
                         <div>
                           <p className="text-sm font-semibold text-gray-900 mb-2">4) Önerilen İK Aksiyonları:</p>
                           <ul className="space-y-2">
-                            {insight.recommended_actions?.map((action: string, index: number) => (
-                              <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                                <span className="text-orange-600 mt-1">•</span>
-                                <span>{action}</span>
-                              </li>
-                            ))}
+                            {insight.recommended_actions?.map((action: string, index: number) => {
+                              // Remove event_id references from text (they should only be in referenced_events array)
+                              const cleanAction = action.replace(/\s*\(event_id:\s*[a-f0-9-]+\)/gi, '').trim();
+                              return (
+                                <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
+                                  <span className="text-orange-600 mt-1">•</span>
+                                  <span>{cleanAction}</span>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </div>
 
@@ -403,23 +429,6 @@ export default function HRActionsPage() {
                 <p className="text-gray-600 mb-4">
                   Şirket geneli wellbeing verilerinize dayalı AI içgörüleri oluşturmak için butona tıklayın.
                 </p>
-                <Button
-                  onClick={handleGenerateInsights}
-                  disabled={isGeneratingInsights}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                >
-                  {isGeneratingInsights ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Oluşturuluyor...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      İçgörüleri Oluştur
-                    </>
-                  )}
-                </Button>
               </div>
             )}
           </CardContent>
@@ -815,3 +824,14 @@ export default function HRActionsPage() {
   );
 }
 
+export default function HRActionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white p-4 sm:p-6 flex items-center justify-center">
+        <div className="text-center">Yükleniyor...</div>
+      </div>
+    }>
+      <HRActionsPageContent />
+    </Suspense>
+  );
+}

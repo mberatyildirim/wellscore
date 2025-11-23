@@ -16,11 +16,12 @@ export default function EventsPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [allEvents, setAllEvents] = useState<any[]>([]);
-  const [requestedEventIds, setRequestedEventIds] = useState<Set<number>>(new Set());
-  const [approvedEventIds, setApprovedEventIds] = useState<Set<number>>(new Set());
+  const [requestedEventIds, setRequestedEventIds] = useState<Set<string>>(new Set());
+  const [approvedEventIds, setApprovedEventIds] = useState<Set<string>>(new Set());
   const [weakDimensionIds, setWeakDimensionIds] = useState<string[]>([]);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [dimensions, setDimensions] = useState<any[]>([]);
+  const [requestingEventId, setRequestingEventId] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -135,6 +136,34 @@ export default function EventsPage() {
     e.dimension_id !== null && !weakDimensionIds.includes(e.dimension_id)
   ) || [];
 
+  // Handle event request
+  const handleRequestEvent = async (eventId: string) => {
+    if (requestingEventId) return;
+    
+    setRequestingEventId(eventId);
+    try {
+      const response = await fetch('/api/request-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event_id: eventId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Etkinlik talebi oluşturulamadı');
+      }
+
+      toast.success('✅ Etkinlik talebi başarıyla oluşturuldu!');
+      setRequestedEventIds(prev => new Set([...prev, eventId]));
+    } catch (error: any) {
+      console.error('[Request Event Error]:', error);
+      toast.error(error.message || 'Etkinlik talebi oluşturulamadı');
+    } finally {
+      setRequestingEventId(null);
+    }
+  };
+
   // Build filter options: All + Dimensions
   const filterOptions = [
     { value: 'all', label: 'Tümü' },
@@ -219,18 +248,15 @@ export default function EventsPage() {
                   Talep Edildi
                 </Button>
               ) : (
-                <form action="/api/request-event" method="POST" className="w-full">
-                  <input type="hidden" name="event_id" value={event.id} />
-                  <input type="hidden" name="user_id" value={user.id} />
-                  <Button 
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-sm sm:text-base font-semibold shadow-lg"
-                    size="lg"
-                  >
-                    <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                    Hemen Talep Et
-                  </Button>
-                </form>
+                <Button 
+                  onClick={() => handleRequestEvent(event.id)}
+                  disabled={requestingEventId === event.id}
+                  className="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white text-sm sm:text-base font-semibold shadow-lg"
+                  size="lg"
+                >
+                  <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  {requestingEventId === event.id ? 'İşleniyor...' : 'Hemen Talep Et'}
+                </Button>
               )}
             </div>
         </div>
@@ -305,19 +331,16 @@ export default function EventsPage() {
                 Talep Edildi
               </Button>
             ) : (
-              <form action="/api/request-event" method="POST">
-                <input type="hidden" name="event_id" value={event.id} />
-                <input type="hidden" name="user_id" value={user.id} />
-                <Button 
-                  type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
-                  size="sm"
-                >
-                  <Users className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-                  Talep Et
-          </Button>
-              </form>
-        )}
+              <Button 
+                onClick={() => handleRequestEvent(event.id)}
+                disabled={requestingEventId === event.id}
+                className="w-full bg-green-600 hover:bg-green-700 text-white text-xs sm:text-sm"
+                size="sm"
+              >
+                <Users className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+                {requestingEventId === event.id ? 'İşleniyor...' : 'Talep Et'}
+              </Button>
+            )}
           </div>
       </CardContent>
     </Card>
