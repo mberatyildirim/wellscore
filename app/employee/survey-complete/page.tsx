@@ -47,6 +47,7 @@ function SurveyCompletePageContent() {
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [showEvents, setShowEvents] = useState(false); // Control which step to show
+  const [isGeneratingAI, setIsGeneratingAI] = useState(false); // Track AI generation
 
   useEffect(() => {
     async function loadData() {
@@ -72,6 +73,27 @@ function SurveyCompletePageContent() {
 
       if (profile?.ai_recommendations) {
         setRecommendations(profile.ai_recommendations as AIRecommendations);
+      } else {
+        // If no recommendations, generate them automatically in background
+        setIsGeneratingAI(true);
+        try {
+          const aiResponse = await fetch("/api/generate-ai-recommendations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ responseId }),
+          });
+
+          if (aiResponse.ok) {
+            const aiResult = await aiResponse.json();
+            if (aiResult.recommendations) {
+              setRecommendations(aiResult.recommendations);
+            }
+          }
+        } catch (error) {
+          console.error("[AI Generation Error]:", error);
+        } finally {
+          setIsGeneratingAI(false);
+        }
       }
 
       // Get all events
@@ -177,12 +199,14 @@ function SurveyCompletePageContent() {
     setDragOffset({ x: 0, y: 0 });
   };
 
-  if (loading) {
+  if (loading || isGeneratingAI) {
     return (
       <div className="min-h-screen bg-white p-4 sm:p-6 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">AI analiziniz hazırlanıyor...</p>
+          <p className="mt-4 text-gray-600">
+            {isGeneratingAI ? "AI önerileriniz oluşturuluyor... 🤖" : "Yükleniyor..."}
+          </p>
         </div>
       </div>
     );

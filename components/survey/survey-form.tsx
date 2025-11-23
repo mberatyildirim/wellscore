@@ -198,32 +198,19 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
 
       if (scoresError) throw new Error("Boyut skorları kaydedilemedi: " + scoresError.message);
 
-      // Step 7: Generate AI recommendations (wait for it to complete)
-      toast.info("AI önerileriniz oluşturuluyor... 🤖");
-      
-      try {
-        const aiResponse = await fetch("/api/generate-ai-recommendations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ responseId }),
-        });
+      // Step 7: Start AI recommendations generation in background (don't wait)
+      // User will be redirected immediately to onboarding screen
+      fetch("/api/generate-ai-recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ responseId }),
+      }).catch((error) => {
+        console.error("[AI Recommendations Error (background)]:", error);
+        // Silent fail - will be handled on onboarding screen
+      });
 
-        const aiResult = await aiResponse.json();
-
-        if (!aiResponse.ok) {
-          console.error("[AI Recommendations Error]:", aiResult.error);
-          // Still redirect even if AI fails - user can generate manually
-          toast.warning("Anket tamamlandı, ancak AI önerileri oluşturulamadı. Sayfada manuel olarak oluşturabilirsiniz.");
-        } else {
-          toast.success("AI önerileriniz hazır! 🎉");
-        }
-      } catch (aiError) {
-        console.error("[AI Recommendations Error]:", aiError);
-        // Still redirect even if AI fails
-        toast.warning("Anket tamamlandı, ancak AI önerileri oluşturulamadı. Sayfada manuel olarak oluşturabilirsiniz.");
-      }
-
-      // Success! Redirect to survey complete onboarding page
+      // Success! Redirect immediately to onboarding screen
+      // AI recommendations will be generated in background
       router.push(`/employee/survey-complete?responseId=${responseId}`);
       
     } catch (err) {
