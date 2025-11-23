@@ -26,19 +26,19 @@ export default function EventsPage() {
   useEffect(() => {
     async function loadData() {
       const supabase = createClient();
-      
+
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       if (!currentUser) {
         router.push('/auth/login');
         return;
-      }
-      
+  }
+
       setUser(currentUser);
 
       // Fetch user profile
-      const { data: userData } = await supabase
+  const { data: userData } = await supabase
         .from("profiles")
-        .select("company_id")
+    .select("company_id")
         .eq("id", currentUser.id)
         .single();
 
@@ -57,7 +57,7 @@ export default function EventsPage() {
         .eq("user_id", currentUser.id)
         .order("completed_at", { ascending: false })
         .limit(1)
-        .single();
+    .single();
 
       // Get user's dimension scores
       const { data: userScores } = await supabase
@@ -75,15 +75,15 @@ export default function EventsPage() {
 
       // Get all available events
       const { data: events } = await supabase
-        .from("events")
-        .select(`
-          *,
-          wellbeing_dimensions (
+    .from("events")
+    .select(`
+      *,
+      wellbeing_dimensions (
             id,
             name_tr,
             color
-          )
-        `)
+      )
+    `)
         .order("created_at", { ascending: false });
 
       setAllEvents(events || []);
@@ -173,8 +173,8 @@ export default function EventsPage() {
                   fill
                   className="object-contain"
                 />
-              </div>
-            </div>
+          </div>
+        </div>
 
             {/* Middle Section - Content */}
             <div className="flex-1 space-y-4">
@@ -185,7 +185,7 @@ export default function EventsPage() {
                 <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                   {event.description}
                 </p>
-              </div>
+          </div>
 
               {/* Event Type & Location Badges */}
               <div className="flex flex-wrap gap-2">
@@ -195,7 +195,7 @@ export default function EventsPage() {
                 <Badge variant="outline" className="text-xs sm:text-sm border-orange-300 text-orange-700">
                   📍 {event.location}
                 </Badge>
-              </div>
+          </div>
             </div>
 
             {/* Right Section - Action Button */}
@@ -233,7 +233,7 @@ export default function EventsPage() {
                 </form>
               )}
             </div>
-          </div>
+        </div>
         </Card>
       );
     }
@@ -266,15 +266,15 @@ export default function EventsPage() {
               <Badge className="bg-green-600 text-white text-xs">
                 <CheckCircle className="w-3 h-3 mr-1" />
                 Onaylandı
-              </Badge>
-            )}
+            </Badge>
+          )}
             {isRequested && !isApproved && (
               <Badge className="bg-blue-600 text-white text-xs">
                 Talep Edildi
-              </Badge>
-            )}
-          </div>
-          
+            </Badge>
+          )}
+        </div>
+
           <CardTitle className="text-base sm:text-lg font-bold text-foreground">
             {event.title}
           </CardTitle>
@@ -315,13 +315,13 @@ export default function EventsPage() {
                 >
                   <Users className="mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                   Talep Et
-                </Button>
+          </Button>
               </form>
-            )}
+        )}
           </div>
-        </CardContent>
-      </Card>
-    );
+      </CardContent>
+    </Card>
+  );
   };
 
   return (
@@ -372,7 +372,7 @@ export default function EventsPage() {
               <h2 className="text-2xl sm:text-3xl font-bold text-orange-900 flex items-center gap-2">
                 <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                 Özel İş Ortağımız
-              </h2>
+            </h2>
               <p className="mt-2 text-sm sm:text-base text-gray-700">
                 Tüm çalışanlarımız için özel olarak hazırlanmış esnek spor ve wellness çözümü
               </p>
@@ -381,7 +381,7 @@ export default function EventsPage() {
             <div className="w-full">
               {specialEvents.map((event) => renderEventCard(event, false, true))}
             </div>
-          </div>
+              </div>
         )}
 
         {/* Recommended Events */}
@@ -404,7 +404,7 @@ export default function EventsPage() {
 
         {/* All Other Events */}
         {otherEvents.length > 0 && (
-          <div>
+            <div>
             <div className="mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
                 <Users className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -416,9 +416,9 @@ export default function EventsPage() {
             </div>
             <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
               {otherEvents.map((event) => renderEventCard(event, false, false))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* No Events */}
         {(!allEvents || allEvents.length === 0) && (
@@ -427,7 +427,7 @@ export default function EventsPage() {
               <div className="text-center text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>Henüz etkinlik bulunmuyor.</p>
-              </div>
+        </div>
             </CardContent>
           </Card>
         )}

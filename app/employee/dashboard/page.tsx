@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import Link from "next/link";
-import { Activity, Brain, Heart, Users, Briefcase, DollarSign, Home, Target, BookOpen, ArrowRight } from "lucide-react";
+import { Activity, Brain, Heart, Users, Briefcase, DollarSign, Home, Target, BookOpen, ArrowRight, Sparkles } from "lucide-react";
+import { SurveyRetakeCard } from "@/components/employee/survey-retake-card";
 
 // Icon mapping for dimensions
 const dimensionIcons: Record<string, any> = {
@@ -38,7 +39,7 @@ export default async function EmployeeDashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  // Get user profile
+  // Get user profile with AI recommendations
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -46,6 +47,9 @@ export default async function EmployeeDashboardPage() {
     .single();
 
   if (!profile) redirect("/auth/login");
+
+  // Check if AI recommendations exist
+  const hasAIRecommendations = profile.ai_recommendations !== null;
 
   // Get latest survey response
   const { data: latestResponse } = await supabase
@@ -230,6 +234,8 @@ export default async function EmployeeDashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+          {/* Tekrar Değerlendirme Card - Client Component with 30-day check */}
+          <SurveyRetakeCard latestResponseDate={latestResponse?.completed_at} />
 
           <Card className="border-border">
             <CardHeader>
@@ -271,23 +277,37 @@ export default async function EmployeeDashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
+          <Card className={`border-primary/20 bg-gradient-to-br from-primary/5 to-background ${hasAIRecommendations ? 'border-orange-300 shadow-lg' : ''}`}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
                 Kişisel Öneriler
               </CardTitle>
               <CardDescription>
-                AI destekli gelişim önerileri
+                {hasAIRecommendations 
+                  ? "AI tarafından oluşturulmuş özel önerileriniz hazır" 
+                  : "AI destekli gelişim önerileri"}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" className="w-full">
-                <Link href="/employee/recommendations">
-                  Önerileri Gör
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
+            <CardContent className="space-y-3">
+              {hasAIRecommendations ? (
+                <Button asChild className="w-full bg-orange-600 hover:bg-orange-700 text-white">
+                  <Link href="/employee/ai-recommendations">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    AI Önerilerimi Gör
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild variant="outline" className="w-full">
+                    <Link href="/employee/recommendations">
+                      Önerileri Gör
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

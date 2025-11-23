@@ -10,17 +10,31 @@ export async function POST(request: NextRequest) {
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      console.error("[WellScore] Auth error:", authError);
-      return NextResponse.redirect(new URL("/auth/login", request.url));
+      console.error("[Request Event] Auth error:", authError);
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    // Parse form data
-    const formData = await request.formData();
-    const eventId = formData.get("event_id") as string;
+    // Parse request body (support both JSON and formData)
+    let eventId: string;
+    const contentType = request.headers.get("content-type");
+    
+    if (contentType?.includes("application/json")) {
+      const body = await request.json();
+      eventId = body.event_id;
+    } else {
+      const formData = await request.formData();
+      eventId = formData.get("event_id") as string;
+    }
 
     if (!eventId) {
-      console.error("[WellScore] Missing event ID");
-      return NextResponse.redirect(new URL("/employee/events?error=missing_event", request.url));
+      console.error("[Request Event] Missing event ID");
+      return NextResponse.json(
+        { error: "Event ID is required" },
+        { status: 400 }
+      );
     }
 
     // Check if already requested (don't fail if error, just check data)
@@ -36,8 +50,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (existingRequest) {
-      console.log("[WellScore] Already requested, redirecting");
-      return NextResponse.redirect(new URL("/employee/events?info=already_requested", request.url));
+      console.log("[Request Event] Already requested");
+      return NextResponse.json(
+        { error: "Bu etkinlik zaten talep edilmiş" },
+        { status: 409 }
+      );
     }
 
     // Get user's profile to check company_id
@@ -47,9 +64,9 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    console.log("[WellScore] User ID:", user.id);
-    console.log("[WellScore] Event ID:", eventId);
-    console.log("[WellScore] User Company ID:", userProfile?.company_id);
+    console.log("[Request Event] User ID:", user.id);
+    console.log("[Request Event] Event ID:", eventId);
+    console.log("[Request Event] User Company ID:", userProfile?.company_id);
 
     // Try direct insert first (RLS is disabled in dev)
     const { error: directError, data: insertData } = await supabase
@@ -63,7 +80,7 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (directError) {
-      console.error("[WellScore] Direct insert failed:", directError.message, directError.details, directError.hint, directError.code);
+      console.error("[Request Event] Direct insert failed:", directError.message, directError.details, directError.hint, directError.code);
       
       // Try RPC function as fallback
       const { error: rpcError } = await supabase.rpc('request_event_registration', {
@@ -72,17 +89,26 @@ export async function POST(request: NextRequest) {
       });
       
       if (rpcError) {
-        console.error("[WellScore] RPC also failed:", rpcError.message, rpcError.details);
-        return NextResponse.redirect(new URL(`/employee/events?error=failed&msg=${encodeURIComponent(directError.message)}`, request.url));
+        console.error("[Request Event] RPC also failed:", rpcError.message, rpcError.details);
+        return NextResponse.json(
+          { error: directError.message || "Etkinlik talebi oluşturulamadı" },
+          { status: 500 }
+        );
       }
     }
     
-    console.log("[WellScore] Event request successful, data:", insertData);
-    // Redirect back to events page with success
-    return NextResponse.redirect(new URL("/employee/events?success=true", request.url));
-  } catch (error) {
-    console.error("[WellScore] Event request exception:", error);
-    return NextResponse.redirect(new URL("/employee/events?error=exception", request.url));
+    console.log("[Request Event] Event request successful, data:", insertData);
+    return NextResponse.json({
+      success: true,
+      message: "Etkinlik talebi başarıyla oluşturuldu",
+      data: insertData,
+    });
+  } catch (error: any) {
+    console.error("[Request Event] Exception:", error);
+    return NextResponse.json(
+      { error: error.message || "Beklenmeyen bir hata oluştu" },
+      { status: 500 }
+    );
   }
 }
 

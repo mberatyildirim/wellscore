@@ -198,9 +198,33 @@ export function SurveyForm({ dimensions, questions, userId }: SurveyFormProps) {
 
       if (scoresError) throw new Error("Boyut skorları kaydedilemedi: " + scoresError.message);
 
-      // Success!
-      toast.success("Anket başarıyla tamamlandı! 🎉");
-      router.push("/employee/dashboard");
+      // Step 7: Generate AI recommendations (wait for it to complete)
+      toast.info("AI önerileriniz oluşturuluyor... 🤖");
+      
+      try {
+        const aiResponse = await fetch("/api/generate-ai-recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ responseId }),
+        });
+
+        const aiResult = await aiResponse.json();
+
+        if (!aiResponse.ok) {
+          console.error("[AI Recommendations Error]:", aiResult.error);
+          // Still redirect even if AI fails - user can generate manually
+          toast.warning("Anket tamamlandı, ancak AI önerileri oluşturulamadı. Sayfada manuel olarak oluşturabilirsiniz.");
+        } else {
+          toast.success("AI önerileriniz hazır! 🎉");
+        }
+      } catch (aiError) {
+        console.error("[AI Recommendations Error]:", aiError);
+        // Still redirect even if AI fails
+        toast.warning("Anket tamamlandı, ancak AI önerileri oluşturulamadı. Sayfada manuel olarak oluşturabilirsiniz.");
+      }
+
+      // Success! Redirect to survey complete onboarding page
+      router.push(`/employee/survey-complete?responseId=${responseId}`);
       
     } catch (err) {
       console.error("[Wellscore] Survey submission error:", err);
